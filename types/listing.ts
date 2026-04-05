@@ -1,3 +1,5 @@
+export type ListingStatus = "active" | "sold";
+
 export interface Listing {
   id: string;
   user_id: string;
