@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Viciniti" }],
   creator: "Viciniti",
-  metadataBase: new URL("https://viciniti.com"),
+  metadataBase: new URL("https://viciniti-backend-production.up.railway.app"),
   openGraph: {
     type: "website",
     locale: "en_NG",

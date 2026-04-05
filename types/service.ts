@@ -10,8 +10,8 @@ export interface Service {
   images: ImageObject[];
   status: "active" | "inactive";
   location?: string;
-  latitude?: number;
-  longitude?: number;
+  latitude?: number | null;
+  longitude?: number | null;
   created_at: string;
 }
 

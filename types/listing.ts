@@ -10,8 +10,8 @@ export interface Listing {
   images: ImageObject[];
   status: "active" | "sold";
   location?: string;
-  latitude?: number;
-  longitude?: number;
+  latitude?: number | null;
+  longitude?: number | null;
   created_at: string;
 }
 
