@@ -22,8 +22,8 @@ export interface ListingCreate {
   category: string;
   images?: ImageObject[];
   location?: string;
-  latitude?: number;
-  longitude?: number;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface ImageObject {
