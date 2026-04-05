@@ -20,22 +20,22 @@ import Image from "next/image";
 
 type Tab = "my-bookings" | "my-requests";
 
-interface Booking {
-  id: string;
-  service_id: string;
-  client_id: string;
-  provider_id: string;
-  amount: number;
-  fee: number;
-  status: BookingStatus;
-  scheduled_at: string;
-  created_at: string;
-  service?: {
-    id: string;
-    title: string;
-    images: { url: string; public_id: string }[];
-  };
-}
+// interface Booking {
+//   id: string;
+//   service_id: string;
+//   client_id: string;
+//   provider_id: string;
+//   amount: number;
+//   fee: number;
+//   status: BookingStatus;
+//   scheduled_at: string;
+//   created_at: string;
+//   service?: {
+//     id: string;
+//     title: string;
+//     images: { url: string; public_id: string }[];
+//   };
+// }
 
 const STATUS_STYLES: Record<
   BookingStatus,
