@@ -26,11 +26,11 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Viciniti" }],
   creator: "Viciniti",
-  metadataBase: new URL("https://viciniti-backend-production.up.railway.app"),
+  metadataBase: new URL("https://viciniti-frontend.vercel.app"),
   openGraph: {
     type: "website",
     locale: "en_NG",
-    url: "https://viciniti.com",
+    url: "https://viciniti-frontend.vercel.app",
     siteName: "Viciniti",
     title: "Viciniti — Local Community Marketplace",
     description:
