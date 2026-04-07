@@ -1,9 +1,13 @@
 import axios from "axios";
 
+const baseURL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://viciniti-backend-production.up.railway.app";
+
+console.log("API Base URL:", baseURL);
+
 const api = axios.create({
-  baseURL:
-    process.env.NEXT_PUBLIC_API_URL ||
-    "https://viciniti-backend-production.up.railway.app",
+  baseURL,
   headers: {
     "Content-Type": "application/json",
   },
