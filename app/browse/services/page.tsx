@@ -1,4 +1,4 @@
-import BrowseItemsContentPage from "../items/BrowseItemsContent";
+import BrowseServicesContentPage from "./BrowseServicesContentPage";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -11,6 +11,6 @@ export const metadata: Metadata = {
   },
 };
 
-export default function BrowseItemsPage() {
-  return <BrowseItemsContentPage />;
+export default function BrowseServicesPage() {
+  return <BrowseServicesContentPage />;
 }
