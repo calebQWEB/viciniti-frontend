@@ -33,6 +33,21 @@ const STATUS_STYLES: Record<
     classes: "bg-rose-50 text-rose-700 border-rose-200/50",
     dot: "bg-rose-400",
   },
+  chargeback_filed: {
+    label: "Chargeback Filed",
+    classes: "bg-orange-50 text-orange-700 border-orange-200/50",
+    dot: "bg-orange-400",
+  },
+  chargeback_won: {
+    label: "Chargeback Won",
+    classes: "bg-sky-50 text-sky-700 border-sky-200/50",
+    dot: "bg-sky-400",
+  },
+  chargeback_lost: {
+    label: "Chargeback Lost",
+    classes: "bg-red-50 text-red-700 border-red-200/50",
+    dot: "bg-red-400",
+  },
 };
 
 function StatusBadge({ status }: { status: TransactionStatus }) {
@@ -59,17 +74,17 @@ function StatCard({
   accent: string;
 }) {
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 flex items-center gap-3 sm:gap-5 hover:shadow-[0_20px_50px_rgba(0,0,0,0.04)] transition-all duration-300">
+    <div className="bg-white border border-gray-100 rounded-2xl sm:rounded-3xl p-3 sm:p-5 flex items-center gap-3 sm:gap-5 hover:shadow-[0_20px_50px_rgba(0,0,0,0.04)] transition-all duration-300">
       <div
-        className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 ${accent}`}
+        className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 ${accent}`}
       >
         {icon}
       </div>
       <div>
-        <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-0.5 sm:mb-1">
+        <p className="text-[8px] uppercase tracking-widest text-gray-400 font-bold mb-0.5 sm:mb-1">
           {label}
         </p>
-        <p className="text-lg sm:text-2xl font-black text-gray-900 italic tracking-tight">
+        <p className="text-md sm:text-xl font-black text-gray-900 italic tracking-tight">
           {value}
         </p>
       </div>
@@ -86,7 +101,7 @@ function TransactionRow({ transaction }: { transaction: Transaction }) {
       {/* Left — icon + info */}
       <div className="flex items-center gap-5 min-w-0">
         <div
-          className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${
+          className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${
             isPayment
               ? "bg-rose-50 group-hover:bg-rose-100"
               : "bg-emerald-50 group-hover:bg-emerald-100"
@@ -101,10 +116,10 @@ function TransactionRow({ transaction }: { transaction: Transaction }) {
 
         <div className="space-y-1 min-w-0">
           <StatusBadge status={transaction.status as TransactionStatus} />
-          <h4 className="text-sm font-bold text-gray-900">
+          <h4 className="text-xs font-bold text-gray-900">
             {isPayment ? "Payment" : "Payout"}
           </h4>
-          <div className="flex items-center gap-3 text-xs text-gray-400 font-medium flex-wrap">
+          <div className="flex items-center gap-3 text-[10px] text-gray-400 font-medium flex-wrap">
             <span>
               {date.toLocaleDateString("en-NG", {
                 day: "numeric",
@@ -113,7 +128,7 @@ function TransactionRow({ transaction }: { transaction: Transaction }) {
               })}
             </span>
             <span className="w-1 h-1 rounded-full bg-gray-300 shrink-0" />
-            <span className="uppercase tracking-wide font-bold text-gray-400 truncate max-w-[140px] sm:max-w-none">
+            <span className="uppercase tracking-wide font-bold text-gray-600 truncate max-w-[140px] sm:max-w-none">
               Ref: {transaction.reference}
             </span>
           </div>
@@ -127,7 +142,7 @@ function TransactionRow({ transaction }: { transaction: Transaction }) {
             Amount
           </p>
           <p
-            className={`text-lg font-black italic tracking-tight ${
+            className={`text-md font-black italic tracking-tight ${
               isPayment ? "text-rose-500" : "text-emerald-500"
             }`}
           >
@@ -180,14 +195,14 @@ export default function PaymentsPage() {
       <div className="max-w-5xl mx-auto px-6 pt-16">
         {/* Header */}
         <div className="space-y-2 mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2D6A4F]/10 text-[#2D6A4F] text-[10px] font-bold uppercase tracking-wider">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2D6A4F]/10 text-[#2D6A4F] text-[8px] font-bold uppercase tracking-wider">
             <Wallet className="w-3 h-3" />
             Finances
           </div>
-          <h1 className="text-4xl font-black text-gray-900 tracking-tight">
+          <h1 className="text-2xl font-black text-gray-900 tracking-tight">
             Payments & Earnings
           </h1>
-          <p className="text-gray-500 font-medium">
+          <p className="text-gray-500 text-sm font-medium">
             A full overview of your financial activity on Viciniti.
           </p>
         </div>

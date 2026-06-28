@@ -86,20 +86,20 @@ export default function DashboardPage() {
         <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-1">
           Explore your neighborhood
         </h2>
-        <p className="text-xs sm:text-sm text-gray-500 mb-4">
+        <p className="text-xs text-gray-500 mb-4">
           Discover items and services available near you
         </p>
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
           <Link
             href="/browse/items"
-            className="btn-primary w-full sm:w-auto flex items-center justify-center gap-2"
+            className="text-xs btn-primary w-full sm:w-auto flex items-center justify-center gap-2"
           >
             <ShoppingBag className="w-4 h-4" />
             Browse Items
           </Link>
           <Link
             href="/browse/services"
-            className="btn-outline flex items-center justify-center gap-2"
+            className="text-xs btn-outline flex items-center justify-center gap-2"
           >
             <Wrench className="w-4 h-4" />
             Browse Services

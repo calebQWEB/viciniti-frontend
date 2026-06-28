@@ -136,14 +136,14 @@ export default function DashboardLayout({
         <div className="p-4 border-b border-earth-100 space-y-2">
           <Link
             href="/dashboard/listings/create"
-            className="w-full btn-primary py-2.5 text-sm flex items-center justify-center gap-2"
+            className="w-full btn-primary py-2.5 text-xs flex items-center justify-center gap-2"
           >
             <PlusCircle className="w-4 h-4" />
             Sell an Item
           </Link>
           <Link
             href="/dashboard/services/create"
-            className="w-full btn-outline py-2.5 text-sm flex items-center justify-center gap-2"
+            className="w-full btn-outline py-2.5 text-xs flex items-center justify-center gap-2"
           >
             <PlusCircle className="w-4 h-4" />
             Offer a Service
@@ -156,7 +156,7 @@ export default function DashboardLayout({
             <Link
               key={link.href}
               href={link.href}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-primary-50 hover:text-primary-600 transition-all font-medium text-sm"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-primary-50 hover:text-primary-600 transition-all font-medium text-xs"
             >
               {link.icon}
               {link.label}

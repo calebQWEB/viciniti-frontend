@@ -1,4 +1,10 @@
-export type TransactionStatus = "pending" | "success" | "failed";
+export type TransactionStatus =
+  | "pending"
+  | "success"
+  | "failed"
+  | "chargeback_filed"
+  | "chargeback_won"
+  | "chargeback_lost";
 export type TransactionType = "payment" | "payout";
 
 export interface Transaction {
