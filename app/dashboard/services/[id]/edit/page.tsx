@@ -45,7 +45,6 @@ export default function EditServicePage() {
     Partial<Record<keyof ServiceCreate, string>>
   >({});
 
-  // Fetch existing service
   const { data: service, isLoading } = useQuery({
     queryKey: ["service", id],
     queryFn: async () => {
@@ -54,7 +53,6 @@ export default function EditServicePage() {
     },
   });
 
-  // Pre-populate form
   useEffect(() => {
     if (service) {
       setForm({
@@ -71,7 +69,6 @@ export default function EditServicePage() {
     }
   }, [service]);
 
-  // Update mutation
   const { mutate, isPending } = useMutation({
     mutationFn: (data: ServiceCreate & { status: string }) =>
       api.put(`/services/${id}`, data),
@@ -133,36 +130,36 @@ export default function EditServicePage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-earth-50 flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-7 h-7 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto py-6 sm:py-8 px-4 sm:px-6">
+    <div className="max-w-2xl mx-auto py-4 sm:py-6 px-4 sm:px-6">
       {/* Header */}
-      <div className="mb-6 sm:mb-8">
+      <div className="mb-4 sm:mb-5">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-gray-500 hover:text-primary-600 transition-colors mb-3 sm:mb-4 font-medium"
+          className="flex items-center gap-1.5 text-gray-500 hover:text-primary-600 transition-colors mb-2.5 text-xs font-medium"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-3 h-3" />
           Back
         </button>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
           Edit Service
         </h1>
-        <p className="mt-1 sm:mt-2 text-gray-500 text-sm sm:text-base">
+        <p className="mt-0.5 text-gray-500 text-xs">
           Update your service details
         </p>
       </div>
 
       {/* Form Card */}
-      <div className="card p-4 sm:p-8">
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="card p-3 sm:p-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* Title */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-xs font-semibold text-gray-700 mb-1">
               Service Title
             </label>
             <input
@@ -170,35 +167,37 @@ export default function EditServicePage() {
               name="title"
               value={form.title}
               onChange={handleChange}
-              className="input"
+              className="input text-xs py-2 px-3 rounded-lg"
               placeholder="e.g. Professional Web Design"
             />
             {errors.title && (
-              <p className="text-red-500 text-xs mt-1">{errors.title}</p>
+              <p className="text-red-500 text-[10px] mt-1">{errors.title}</p>
             )}
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-xs font-semibold text-gray-700 mb-1">
               Description
             </label>
             <textarea
               name="description"
               value={form.description}
               onChange={handleChange}
-              className="input min-h-32 resize-none"
+              className="input min-h-24 resize-none text-xs py-2 px-3 rounded-lg"
               placeholder="Describe your service in detail..."
             />
             {errors.description && (
-              <p className="text-red-500 text-xs mt-1">{errors.description}</p>
+              <p className="text-red-500 text-[10px] mt-1">
+                {errors.description}
+              </p>
             )}
           </div>
 
           {/* Price & Category */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
                 Price (₦)
               </label>
               <input
@@ -206,24 +205,24 @@ export default function EditServicePage() {
                 name="price"
                 value={form.price || ""}
                 onChange={handleChange}
-                className="input"
+                className="input text-xs py-2 px-3 rounded-lg"
                 placeholder="e.g. 150000"
                 min="0"
               />
               {errors.price && (
-                <p className="text-red-500 text-xs mt-1">{errors.price}</p>
+                <p className="text-red-500 text-[10px] mt-1">{errors.price}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
                 Category
               </label>
               <select
                 name="category"
                 value={form.category}
                 onChange={handleChange}
-                className="input"
+                className="input text-xs py-2 px-3 rounded-lg"
               >
                 <option value="">Select category</option>
                 {CATEGORIES.map((cat) => (
@@ -233,14 +232,16 @@ export default function EditServicePage() {
                 ))}
               </select>
               {errors.category && (
-                <p className="text-red-500 text-xs mt-1">{errors.category}</p>
+                <p className="text-red-500 text-[10px] mt-1">
+                  {errors.category}
+                </p>
               )}
             </div>
           </div>
 
           {/* Images */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-xs font-semibold text-gray-700 mb-1">
               Images
             </label>
             <ImageUploader
@@ -252,7 +253,7 @@ export default function EditServicePage() {
 
           {/* Location */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-xs font-semibold text-gray-700 mb-1">
               Location
             </label>
             <LocationPicker
@@ -265,7 +266,7 @@ export default function EditServicePage() {
 
           {/* Status */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-xs font-semibold text-gray-700 mb-1">
               Status
             </label>
             <select
@@ -273,7 +274,7 @@ export default function EditServicePage() {
               onChange={(e) =>
                 setStatus(e.target.value as "active" | "inactive")
               }
-              className="input"
+              className="input text-xs py-2 px-3 rounded-lg"
             >
               <option value="active">Active — visible to everyone</option>
               <option value="inactive">Inactive — hidden from browse</option>
@@ -281,22 +282,22 @@ export default function EditServicePage() {
           </div>
 
           {/* Buttons */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2">
             <button
               type="button"
               onClick={() => router.back()}
-              className="flex-1 btn-outline py-3 sm:py-4"
+              className="flex-1 btn-outline py-2 text-xs"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isPending}
-              className="flex-1 btn-primary py-3 sm:py-4 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 btn-primary py-2 text-xs flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isPending ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3 h-3 animate-spin" />
                   Saving...
                 </>
               ) : (

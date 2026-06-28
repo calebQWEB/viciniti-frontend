@@ -26,9 +26,18 @@ export default function PaymentCallbackPage() {
       // Flutterwave appends ?status=successful&tx_ref=...&transaction_id=... to the redirect URL
       const flwStatus = searchParams.get("status");
       const txRef = searchParams.get("tx_ref");
+      const orderId = localStorage.getItem("payment_order_id");
 
       // If Flutterwave says it failed before we even verify, show failure immediately
       if (flwStatus !== "successful" || !txRef) {
+        // Cancel the order if user closed the payment window
+        if (orderId) {
+          try {
+            await api.delete(`/orders/${orderId}`);
+          } catch (err) {
+            console.error("Failed to cancel order:", err);
+          }
+        }
         setStatus("failed");
         setErrorMessage("Payment was not completed.");
         return;
@@ -52,11 +61,13 @@ export default function PaymentCallbackPage() {
           setStatus("success");
           // Clean up localStorage
           localStorage.removeItem("payment_reference");
+          localStorage.removeItem("payment_order_id");
           localStorage.removeItem("payment_type");
         } else {
           setStatus("failed");
+          // Order will be auto-cancelled by backend on verification failure
           setErrorMessage(
-            "Payment verification failed. Please contact support.",
+            "Payment verification failed. Your order has been cancelled.",
           );
         }
       } catch (error: any) {

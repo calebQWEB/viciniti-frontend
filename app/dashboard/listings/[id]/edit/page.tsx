@@ -48,7 +48,6 @@ export default function EditListingPage() {
     Partial<Record<keyof ListingCreate, string>>
   >({});
 
-  // Fetch existing listing data
   const { data: listing, isLoading } = useQuery({
     queryKey: ["listing", id],
     queryFn: async () => {
@@ -57,7 +56,6 @@ export default function EditListingPage() {
     },
   });
 
-  // Pre-populate form once data is loaded
   useEffect(() => {
     if (listing) {
       setForm({
@@ -70,7 +68,6 @@ export default function EditListingPage() {
         latitude: listing.latitude || null,
         longitude: listing.longitude || null,
       });
-
       setStatus(listing.status);
     }
   }, [listing]);
@@ -135,18 +132,18 @@ export default function EditListingPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#FDFDFD] pb-20">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-12 sm:pt-16">
-          <div className="animate-pulse space-y-6">
-            <div className="space-y-2">
-              <div className="h-4 bg-gray-200 rounded w-24" />
-              <div className="h-8 bg-gray-200 rounded w-48" />
-              <div className="h-4 bg-gray-200 rounded w-64" />
+      <div className="min-h-screen bg-[#FDFDFD] pb-12">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-8 sm:pt-10">
+          <div className="animate-pulse space-y-4">
+            <div className="space-y-1.5">
+              <div className="h-3 bg-gray-200 rounded w-20" />
+              <div className="h-6 bg-gray-200 rounded w-40" />
+              <div className="h-3 bg-gray-200 rounded w-52" />
             </div>
-            <div className="h-12 bg-gray-200 rounded-2xl" />
-            <div className="h-32 bg-gray-200 rounded-2xl" />
-            <div className="h-12 bg-gray-200 rounded-2xl" />
-            <div className="h-12 bg-gray-200 rounded-2xl" />
+            <div className="h-9 bg-gray-200 rounded-lg" />
+            <div className="h-24 bg-gray-200 rounded-lg" />
+            <div className="h-9 bg-gray-200 rounded-lg" />
+            <div className="h-9 bg-gray-200 rounded-lg" />
           </div>
         </div>
       </div>
@@ -154,12 +151,13 @@ export default function EditListingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD] pb-20">
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-12 sm:pt-16">
-        <div className="mb-8 sm:mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2D6A4F]/10 text-[#2D6A4F] text-[10px] font-bold uppercase tracking-wider mb-4">
+    <div className="min-h-screen bg-[#FDFDFD] pb-12">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-8 sm:pt-10">
+        {/* Header */}
+        <div className="mb-5 sm:mb-7">
+          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#2D6A4F]/10 text-[#2D6A4F] text-[9px] font-bold uppercase tracking-wider mb-2.5">
             <svg
-              className="w-3 h-3"
+              className="w-2.5 h-2.5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -173,18 +171,18 @@ export default function EditListingPage() {
             </svg>
             Edit Listing
           </div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-gray-900 tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
             Update Listing
           </h1>
-          <p className="text-sm sm:text-base text-gray-500 font-medium mt-2">
+          <p className="text-xs text-gray-500 font-medium mt-1">
             Make changes to your listing details
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
           {/* Title */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-900">
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-gray-900">
               Title <span className="text-red-500">*</span>
             </label>
             <input
@@ -193,16 +191,18 @@ export default function EditListingPage() {
               value={form.title}
               onChange={handleChange}
               placeholder="Enter listing title"
-              className="w-full px-4 py-3 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/20 focus:border-[#2D6A4F] bg-white text-gray-900 placeholder-gray-400 transition-all"
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/20 focus:border-[#2D6A4F] bg-white text-gray-900 text-xs placeholder-gray-400 transition-all"
             />
             {errors.title && (
-              <p className="text-red-500 text-xs font-medium">{errors.title}</p>
+              <p className="text-red-500 text-[10px] font-medium">
+                {errors.title}
+              </p>
             )}
           </div>
 
           {/* Description */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-900">
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-gray-900">
               Description <span className="text-red-500">*</span>
             </label>
             <textarea
@@ -211,19 +211,19 @@ export default function EditListingPage() {
               onChange={handleChange}
               rows={4}
               placeholder="Describe your item in detail"
-              className="w-full px-4 py-3 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/20 focus:border-[#2D6A4F] bg-white text-gray-900 placeholder-gray-400 resize-none transition-all"
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/20 focus:border-[#2D6A4F] bg-white text-gray-900 text-xs placeholder-gray-400 resize-none transition-all"
             />
             {errors.description && (
-              <p className="text-red-500 text-xs font-medium">
+              <p className="text-red-500 text-[10px] font-medium">
                 {errors.description}
               </p>
             )}
           </div>
 
           {/* Price & Category */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-900">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-gray-900">
                 Price (₦) <span className="text-red-500">*</span>
               </label>
               <input
@@ -234,24 +234,24 @@ export default function EditListingPage() {
                 min="0"
                 step="0.01"
                 placeholder="0.00"
-                className="w-full px-4 py-3 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/20 focus:border-[#2D6A4F] bg-white text-gray-900 placeholder-gray-400 transition-all"
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/20 focus:border-[#2D6A4F] bg-white text-gray-900 text-xs placeholder-gray-400 transition-all"
               />
               {errors.price && (
-                <p className="text-red-500 text-xs font-medium">
+                <p className="text-red-500 text-[10px] font-medium">
                   {errors.price}
                 </p>
               )}
             </div>
 
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-900">
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-gray-900">
                 Category <span className="text-red-500">*</span>
               </label>
               <select
                 name="category"
                 value={form.category}
                 onChange={handleChange}
-                className="w-full px-4 py-3 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/20 focus:border-[#2D6A4F] bg-white text-gray-900 transition-all appearance-none"
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/20 focus:border-[#2D6A4F] bg-white text-gray-900 text-xs transition-all appearance-none"
               >
                 <option value="">Select a category</option>
                 {CATEGORIES.map((cat) => (
@@ -261,7 +261,7 @@ export default function EditListingPage() {
                 ))}
               </select>
               {errors.category && (
-                <p className="text-red-500 text-xs font-medium">
+                <p className="text-red-500 text-[10px] font-medium">
                   {errors.category}
                 </p>
               )}
@@ -269,8 +269,8 @@ export default function EditListingPage() {
           </div>
 
           {/* Images */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-900">
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-gray-900">
               Images
             </label>
             <ImageUploader
@@ -281,8 +281,8 @@ export default function EditListingPage() {
           </div>
 
           {/* Location */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-900">
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-gray-900">
               Location
             </label>
             <LocationPicker
@@ -294,14 +294,14 @@ export default function EditListingPage() {
           </div>
 
           {/* Status */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-900">
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-gray-900">
               Status
             </label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as "active" | "sold")}
-              className="w-full px-4 py-3 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/20 focus:border-[#2D6A4F] bg-white text-gray-900 transition-all appearance-none"
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/20 focus:border-[#2D6A4F] bg-white text-gray-900 text-xs transition-all appearance-none"
             >
               <option value="active">Active — visible to everyone</option>
               <option value="sold">Sold — mark as sold</option>
@@ -309,19 +309,19 @@ export default function EditListingPage() {
           </div>
 
           {/* Submit */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-4 sm:pt-6 border-t border-gray-100">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-gray-100">
             <button
               type="submit"
               disabled={isPending}
-              className="flex-1 sm:flex-none bg-[#2D6A4F] hover:bg-[#1b4332] text-white px-6 py-3 sm:px-6 sm:py-3 rounded-xl sm:rounded-2xl font-semibold transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-1 sm:flex-none bg-[#2D6A4F] hover:bg-[#1b4332] text-white px-4 py-2 rounded-lg font-semibold text-xs transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 flex items-center justify-center gap-1.5"
             >
-              {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+              {isPending && <Loader2 className="w-3 h-3 animate-spin" />}
               {isPending ? "Saving..." : "Save Changes"}
             </button>
             <button
               type="button"
               onClick={() => router.back()}
-              className="flex-1 sm:flex-none border-2 border-gray-200 text-gray-700 hover:bg-gray-50 px-6 py-3 sm:px-6 sm:py-3 rounded-xl sm:rounded-2xl font-semibold transition-all duration-200"
+              className="flex-1 sm:flex-none border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg font-semibold text-xs transition-all duration-200"
             >
               Cancel
             </button>

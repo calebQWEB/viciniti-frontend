@@ -59,12 +59,13 @@ export default function ItemDetailPage() {
         order_id: order.id,
       });
 
-      return paymentResponse.data;
+      return { ...paymentResponse.data, orderId: order.id };
     },
     onSuccess: (data) => {
       if (!data) return;
-      // Store reference so callback page can verify it
+      // Store reference and order ID so callback page can verify and cancel if needed
       localStorage.setItem("payment_reference", data.reference);
+      localStorage.setItem("payment_order_id", data.orderId);
       localStorage.setItem("payment_type", "order");
       // Redirect to Flutterwave hosted payment page
       window.location.href = data.payment_link;

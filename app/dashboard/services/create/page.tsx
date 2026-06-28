@@ -80,14 +80,12 @@ export default function CreateServicePage() {
 
   const validate = (): boolean => {
     const newErrors: Partial<Record<keyof ServiceCreate, string>> = {};
-
     if (!form.title.trim()) newErrors.title = "Title is required";
     if (!form.description.trim())
       newErrors.description = "Description is required";
     if (!form.price || form.price <= 0)
       newErrors.price = "Price must be greater than 0";
     if (!form.category) newErrors.category = "Please select a category";
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -99,21 +97,22 @@ export default function CreateServicePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD] py-6 sm:py-8 px-3 sm:px-6">
+    <div className="min-h-screen bg-[#FDFDFD] py-4 sm:py-6 px-3 sm:px-6">
       <div className="max-w-2xl mx-auto">
-        <div className="mb-5 sm:mb-7">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
+        {/* Header */}
+        <div className="mb-4 sm:mb-5">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
             Offer a Service
           </h1>
-          <p className="text-gray-500 mt-1 text-xs sm:text-sm md:text-base">
+          <p className="text-gray-500 mt-0.5 text-xs">
             Tell people what service you provide and how to book you.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-gray-700 mb-1">
               Service Title <span className="text-red-500">*</span>
             </label>
             <input
@@ -122,16 +121,16 @@ export default function CreateServicePage() {
               value={form.title}
               onChange={handleChange}
               placeholder="e.g. Professional Home Cleaning"
-              className="input w-full"
+              className="input w-full text-xs py-2 px-3 rounded-lg"
             />
             {errors.title && (
-              <p className="text-red-500 text-xs mt-1">{errors.title}</p>
+              <p className="text-red-500 text-[10px] mt-1">{errors.title}</p>
             )}
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-gray-700 mb-1">
               Description <span className="text-red-500">*</span>
             </label>
             <textarea
@@ -140,17 +139,19 @@ export default function CreateServicePage() {
               onChange={handleChange}
               placeholder="Describe your service — what's included, your experience, availability..."
               rows={4}
-              className="input w-full resize-none"
+              className="input w-full resize-none text-xs py-2 px-3 rounded-lg"
             />
             {errors.description && (
-              <p className="text-red-500 text-xs mt-1">{errors.description}</p>
+              <p className="text-red-500 text-[10px] mt-1">
+                {errors.description}
+              </p>
             )}
           </div>
 
           {/* Price & Category */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
                 Fixed Price (₦) <span className="text-red-500">*</span>
               </label>
               <input
@@ -161,22 +162,22 @@ export default function CreateServicePage() {
                 placeholder="0.00"
                 min="0"
                 step="0.01"
-                className="input w-full"
+                className="input w-full text-xs py-2 px-3 rounded-lg"
               />
               {errors.price && (
-                <p className="text-red-500 text-xs mt-1">{errors.price}</p>
+                <p className="text-red-500 text-[10px] mt-1">{errors.price}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
                 Category <span className="text-red-500">*</span>
               </label>
               <select
                 name="category"
                 value={form.category}
                 onChange={handleChange}
-                className="input w-full"
+                className="input w-full text-xs py-2 px-3 rounded-lg"
               >
                 <option value="">Select a category</option>
                 {CATEGORIES.map((cat) => (
@@ -186,14 +187,16 @@ export default function CreateServicePage() {
                 ))}
               </select>
               {errors.category && (
-                <p className="text-red-500 text-xs mt-1">{errors.category}</p>
+                <p className="text-red-500 text-[10px] mt-1">
+                  {errors.category}
+                </p>
               )}
             </div>
           </div>
 
           {/* Images */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-gray-700 mb-1">
               Images
             </label>
             <ImageUploader
@@ -205,7 +208,7 @@ export default function CreateServicePage() {
 
           {/* Location */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-gray-700 mb-1">
               Location
             </label>
             <LocationPicker
@@ -217,19 +220,19 @@ export default function CreateServicePage() {
           </div>
 
           {/* Submit */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2">
             <button
               type="submit"
               disabled={isPending}
-              className="btn-primary w-full sm:w-auto flex items-center justify-center gap-2 py-3 sm:py-2"
+              className="btn-primary w-full sm:w-auto flex items-center justify-center gap-1.5 py-2 text-xs"
             >
-              {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+              {isPending && <Loader2 className="w-3 h-3 animate-spin" />}
               {isPending ? "Publishing..." : "Publish Service"}
             </button>
             <button
               type="button"
               onClick={() => router.back()}
-              className="btn-outline w-full sm:w-auto flex items-center justify-center py-3 sm:py-2"
+              className="btn-outline w-full sm:w-auto flex items-center justify-center py-2 text-xs"
             >
               Cancel
             </button>

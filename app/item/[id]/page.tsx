@@ -4,11 +4,13 @@ import ItemDetail from "./ItemDetail";
 export async function generateMetadata({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   try {
+    const { id } = await params;
+
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/listings/${params.id}`,
+      `${process.env.NEXT_PUBLIC_API_URL}/listings/${id}`,
     );
     const listing = await response.json();
 

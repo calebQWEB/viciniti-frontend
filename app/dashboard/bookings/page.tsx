@@ -20,23 +20,6 @@ import Image from "next/image";
 
 type Tab = "my-bookings" | "my-requests";
 
-// interface Booking {
-//   id: string;
-//   service_id: string;
-//   client_id: string;
-//   provider_id: string;
-//   amount: number;
-//   fee: number;
-//   status: BookingStatus;
-//   scheduled_at: string;
-//   created_at: string;
-//   service?: {
-//     id: string;
-//     title: string;
-//     images: { url: string; public_id: string }[];
-//   };
-// }
-
 const STATUS_STYLES: Record<
   BookingStatus,
   { label: string; classes: string; dot: string }
@@ -67,9 +50,9 @@ function StatusBadge({ status }: { status: BookingStatus }) {
   const { label, classes, dot } = STATUS_STYLES[status];
   return (
     <span
-      className={`inline-flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold px-3 py-1 rounded-lg border ${classes}`}
+      className={`inline-flex items-center gap-1.5 text-[9px] uppercase tracking-widest font-bold px-2 py-0.5 rounded border ${classes}`}
     >
-      <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${dot}`} />
+      <span className={`w-1 h-1 rounded-full animate-pulse ${dot}`} />
       {label}
     </span>
   );
@@ -91,12 +74,11 @@ function BookingCard({
   const serviceTitle = booking.service?.title ?? "Unknown Service";
 
   return (
-    <div className="group relative bg-white border border-gray-100 rounded-3xl p-5 transition-all duration-300 hover:shadow-[0_20px_50px_rgba(0,0,0,0.04)] hover:-translate-y-1">
-      <div className="flex flex-col gap-4">
+    <div className="group relative bg-white border border-gray-100 rounded-xl p-3.5 transition-all duration-300 hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)] hover:-translate-y-0.5">
+      <div className="flex flex-col gap-3">
         {/* Top row — image + title + status */}
-        <div className="flex items-center gap-4">
-          {/* Service image */}
-          <div className="relative w-14 h-14 rounded-2xl overflow-hidden bg-gray-100 shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-gray-100 shrink-0">
             {serviceImage ? (
               <Image
                 src={serviceImage}
@@ -106,32 +88,31 @@ function BookingCard({
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <Wrench className="w-6 h-6 text-gray-300" />
+                <Wrench className="w-4 h-4 text-gray-300" />
               </div>
             )}
           </div>
 
-          {/* Title + meta */}
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="font-black text-gray-900 text-sm truncate">
+                <p className="font-black text-gray-900 text-xs truncate">
                   {serviceTitle}
                 </p>
-                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">
+                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                  <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wide">
                     #{booking.id.slice(-8).toUpperCase()}
                   </span>
-                  <span className="w-1 h-1 rounded-full bg-gray-300" />
-                  <span className="text-[10px] text-gray-400 font-medium">
+                  <span className="w-0.5 h-0.5 rounded-full bg-gray-300" />
+                  <span className="text-[9px] text-gray-400 font-medium">
                     {date.toLocaleDateString("en-NG", {
                       day: "numeric",
                       month: "short",
                       year: "numeric",
                     })}
                   </span>
-                  <span className="w-1 h-1 rounded-full bg-gray-300" />
-                  <span className="text-[10px] font-bold uppercase tracking-wide text-[#2D6A4F]">
+                  <span className="w-0.5 h-0.5 rounded-full bg-gray-300" />
+                  <span className="text-[9px] font-bold uppercase tracking-wide text-[#2D6A4F]">
                     {date.toLocaleTimeString("en-NG", {
                       hour: "2-digit",
                       minute: "2-digit",
@@ -145,30 +126,30 @@ function BookingCard({
         </div>
 
         {/* Financial Stats */}
-        <div className="flex flex-col sm:flex-row items-center gap-3 p-3 bg-gray-50/50 rounded-2xl border border-gray-100/50">
+        <div className="flex flex-col sm:flex-row items-center gap-2 p-2.5 bg-gray-50/50 rounded-lg border border-gray-100/50">
           <div className="flex-1 text-center w-full sm:w-auto">
-            <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-0.5">
+            <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold mb-0.5">
               Amount
             </p>
-            <p className="text-base font-black text-gray-900 italic tracking-tight">
+            <p className="text-sm font-black text-gray-900 italic tracking-tight">
               {formatPrice(booking.amount)}
             </p>
           </div>
-          <div className="hidden sm:block w-px h-8 bg-gray-200" />
+          <div className="hidden sm:block w-px h-6 bg-gray-200" />
           <div className="flex-1 text-center w-full sm:w-auto">
-            <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-0.5">
+            <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold mb-0.5">
               Platform Fee
             </p>
-            <p className="text-sm font-bold text-[#2D6A4F]">
+            <p className="text-xs font-bold text-[#2D6A4F]">
               {formatPrice(booking.fee)}
             </p>
           </div>
-          <div className="hidden sm:block w-px h-8 bg-gray-200" />
+          <div className="hidden sm:block w-px h-6 bg-gray-200" />
           <div className="flex-1 text-center w-full sm:w-auto">
-            <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-0.5">
+            <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold mb-0.5">
               Net
             </p>
-            <p className="text-sm font-bold text-gray-600">
+            <p className="text-xs font-bold text-gray-600">
               {formatPrice(booking.amount - booking.fee)}
             </p>
           </div>
@@ -182,19 +163,19 @@ function BookingCard({
                 <button
                   onClick={() => onUpdateStatus(booking.id, "confirmed")}
                   disabled={isUpdating}
-                  className="flex-1 px-4 py-2.5 bg-[#2D6A4F] hover:bg-[#1b4332] text-white rounded-2xl text-sm font-bold shadow-lg shadow-[#2D6A4F]/20 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 px-3 py-1.5 bg-[#2D6A4F] hover:bg-[#1b4332] text-white rounded-lg text-xs font-bold shadow-sm shadow-[#2D6A4F]/20 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1.5"
                 >
                   {isUpdating ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-3 h-3 animate-spin" />
                   ) : (
-                    <CheckCircle className="w-4 h-4" />
+                    <CheckCircle className="w-3 h-3" />
                   )}
                   Accept
                 </button>
                 <button
                   onClick={() => onUpdateStatus(booking.id, "cancelled")}
                   disabled={isUpdating}
-                  className="flex-1 px-4 py-2.5 bg-white border border-gray-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 rounded-2xl text-sm font-bold transition-all disabled:opacity-50"
+                  className="flex-1 px-3 py-1.5 bg-white border border-gray-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
                 >
                   Decline
                 </button>
@@ -203,7 +184,7 @@ function BookingCard({
               <button
                 onClick={() => onUpdateStatus(booking.id, "cancelled")}
                 disabled={isUpdating}
-                className="w-full px-4 py-2.5 border border-gray-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 rounded-2xl text-sm font-bold transition-all disabled:opacity-50"
+                className="w-full px-3 py-1.5 border border-gray-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
               >
                 Cancel Booking
               </button>
@@ -220,7 +201,6 @@ export default function MyBookingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("my-bookings");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  // Queries & Mutations remain identical to your functional logic
   const { data: myBookings, isLoading: loadingBookings } = useQuery({
     queryKey: ["my-bookings"],
     queryFn: async () => {
@@ -259,25 +239,25 @@ export default function MyBookingsPage() {
   const isRequest = activeTab === "my-requests";
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD] pb-20">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-12 sm:pt-16">
+    <div className="min-h-screen bg-[#FDFDFD] pb-12">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-8 sm:pt-10">
         {/* Header Section */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-8 lg:mb-12 gap-6 lg:gap-8">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2D6A4F]/10 text-[#2D6A4F] text-[10px] font-bold uppercase tracking-wider">
-              <Calendar className="w-3 h-3" />
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-6 lg:mb-8 gap-4">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#2D6A4F]/10 text-[#2D6A4F] text-[9px] font-bold uppercase tracking-wider">
+              <Calendar className="w-2.5 h-2.5" />
               Scheduler
             </div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-gray-900 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
               Manage Bookings
             </h1>
-            <p className="text-sm sm:text-base text-gray-500 font-medium">
+            <p className="text-xs text-gray-500 font-medium">
               Manage your professional schedule in one place.
             </p>
           </div>
 
           {/* Segmented Control */}
-          <div className="flex bg-gray-100 p-1.5 rounded-[22px] border border-gray-200/50 shadow-inner w-full sm:w-auto">
+          <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200/50 shadow-inner w-full sm:w-auto">
             {[
               {
                 key: "my-bookings",
@@ -293,7 +273,7 @@ export default function MyBookingsPage() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key as Tab)}
-                className={`relative flex items-center gap-2 sm:gap-3 px-4 sm:px-8 py-3 rounded-[18px] text-sm font-bold transition-all duration-300 flex-1 sm:flex-none justify-center ${
+                className={`relative flex items-center gap-1.5 px-3 sm:px-5 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 flex-1 sm:flex-none justify-center ${
                   activeTab === tab.key
                     ? "bg-white text-[#2D6A4F] shadow-sm shadow-gray-200"
                     : "text-gray-400 hover:text-gray-600"
@@ -305,7 +285,7 @@ export default function MyBookingsPage() {
                 </span>
                 {tab.count !== undefined && (
                   <span
-                    className={`px-1.5 sm:px-2 py-0.5 rounded-md text-[10px] ${
+                    className={`px-1.5 py-0.5 rounded text-[9px] ${
                       activeTab === tab.key
                         ? "bg-[#2D6A4F] text-white"
                         : "bg-gray-200 text-gray-500"
@@ -320,12 +300,12 @@ export default function MyBookingsPage() {
         </div>
 
         {/* Main List */}
-        <div className="space-y-6">
+        <div className="space-y-3">
           {isLoading ? (
             [...Array(3)].map((_, i) => (
               <div
                 key={i}
-                className="h-32 w-full bg-gray-50 animate-pulse rounded-3xl"
+                className="h-24 w-full bg-gray-50 animate-pulse rounded-xl"
               />
             ))
           ) : bookings && bookings.length > 0 ? (
@@ -339,14 +319,14 @@ export default function MyBookingsPage() {
               />
             ))
           ) : (
-            <div className="text-center py-32 bg-white rounded-[40px] border-2 border-dashed border-gray-100">
-              <div className="w-20 h-20 bg-gray-50 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm">
-                <Calendar className="w-8 h-8 text-gray-300" />
+            <div className="text-center py-14 sm:py-20 bg-white rounded-2xl border-2 border-dashed border-gray-100">
+              <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-sm">
+                <Calendar className="w-5 h-5 text-gray-300" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900">
+              <h3 className="text-sm font-bold text-gray-900">
                 Quiet for now...
               </h3>
-              <p className="text-gray-400 max-w-xs mx-auto mt-2 font-medium">
+              <p className="text-gray-400 max-w-xs mx-auto mt-1 font-medium text-xs">
                 {isRequest
                   ? "Incoming service requests will appear here once customers book you."
                   : "Start exploring services to fill up your calendar."}
