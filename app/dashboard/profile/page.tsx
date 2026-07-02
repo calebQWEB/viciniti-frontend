@@ -6,6 +6,7 @@ import api from "@/lib/api";
 import { User } from "@/types/user";
 import { useAuthStore } from "@/store/authStore";
 import LocationPicker from "@/components/ui/LocationPicker";
+import BankAccountSection from "@/components/shared/BankAccountSection";
 import {
   Camera,
   Loader2,
@@ -535,6 +536,9 @@ export default function ProfilePage() {
               </div>
             </div>
           )}
+
+          {/* Bank Account */}
+          <BankAccountSection />
         </div>
       </div>
     </div>
