@@ -127,7 +127,10 @@ function OrderCard({
         />
 
         {/* Completion Progress */}
-        {order.status === "pending" && <CompletionProgress order={order} />}
+        {/* {order.status === "pending" && <CompletionProgress order={order} />} */}
+        {(order.status === "paid" || order.status === "fulfilled") && (
+          <CompletionProgress order={order} />
+        )}
       </div>
     </div>
   );

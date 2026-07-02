@@ -22,17 +22,26 @@ export default function OrderStatusWithActions({
   isSeller,
   isBuyer,
 }: OrderStatusWithActionsProps) {
-  // Payment pending
+  // Payment pending — waiting for payment confirmation
   if (order.status === "pending") {
     return (
+      <div className="flex items-center gap-2 text-amber-700 bg-amber-50 px-3 py-2 rounded-lg text-sm font-medium border border-amber-200">
+        <Clock className="w-4 h-4" />
+        Awaiting Payment
+      </div>
+    );
+  }
+
+  // Paid — payment confirmed, awaiting seller fulfillment
+  if (order.status === "paid") {
+    return (
       <div className="space-y-3">
-        <div className="flex items-center gap-2 text-amber-700 bg-amber-50 px-3 py-2 rounded-lg text-sm font-medium border border-amber-200">
+        <div className="flex items-center gap-2 text-blue-700 bg-blue-50 px-3 py-2 rounded-lg text-sm font-medium border border-blue-200">
           <Clock className="w-4 h-4" />
-          Payment Pending
+          Payment Confirmed
         </div>
 
-        {/* Seller waiting for seller to mark complete */}
-        {isSeller && !order.completed_at && (
+        {isSeller && (
           <Link
             href={`/dashboard/sales/${order.id}/complete`}
             className="block px-4 py-2 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition text-center"
@@ -41,22 +50,31 @@ export default function OrderStatusWithActions({
           </Link>
         )}
 
-        {/* Seller completed, waiting for buyer */}
-        {isSeller && order.completed_at && !order.buyer_accepted_at && (
+        {isBuyer && (
+          <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm font-medium">
+            Waiting for seller to mark complete...
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Fulfilled — seller marked complete, waiting for buyer confirmation
+  if (order.status === "fulfilled") {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 text-gray-950 text-sm font-medium italic mt-3">
+          <Clock className="w-4 h-4" />
+          Awaiting Confirmation
+        </div>
+
+        {isSeller && (
           <div className="px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm font-medium">
             Waiting for buyer to confirm...
           </div>
         )}
 
-        {/* Buyer waiting for seller to mark complete */}
-        {isBuyer && !order.completed_at && (
-          <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm font-medium">
-            Waiting for seller to mark complete...
-          </div>
-        )}
-
-        {/* Buyer can confirm */}
-        {isBuyer && order.completed_at && !order.buyer_accepted_at && (
+        {isBuyer && (
           <Link
             href={`/dashboard/purchases/${order.id}/confirm`}
             className="block px-4 py-2 bg-green-600 text-white rounded-lg font-medium text-sm hover:bg-green-700 transition text-center"
@@ -68,7 +86,7 @@ export default function OrderStatusWithActions({
     );
   }
 
-  // Completed
+  // Completed — buyer confirmed receipt
   if (order.status === "completed") {
     return (
       <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 px-3 py-2 rounded-lg text-sm font-medium border border-emerald-200">
@@ -96,7 +114,6 @@ export default function OrderStatusWithActions({
           <AlertCircle className="w-4 h-4" />
           Dispute Filed
         </div>
-
         <Link
           href={`/dashboard/sales/${order.id}/dispute`}
           className="block px-4 py-2 bg-red-50 text-red-700 rounded-lg font-medium text-sm hover:bg-red-100 transition text-center border border-red-200"
@@ -116,19 +133,19 @@ export function CompletionProgress({ order }: { order: Order }) {
     {
       id: 1,
       label: "Payment Made",
-      completed: order.status !== "pending" || order.completed_at,
+      completed: ["paid", "fulfilled", "completed"].includes(order.status),
       icon: <Home className="w-4 h-4" />,
     },
     {
       id: 2,
       label: "Seller Completes",
-      completed: !!order.completed_at,
+      completed: ["fulfilled", "completed"].includes(order.status),
       icon: <FileCheck className="w-4 h-4" />,
     },
     {
       id: 3,
       label: "Buyer Confirms",
-      completed: !!order.buyer_accepted_at,
+      completed: order.status === "completed",
       icon: <CheckCircle className="w-4 h-4" />,
     },
   ];

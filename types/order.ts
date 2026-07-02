@@ -1,4 +1,10 @@
-export type OrderStatus = "pending" | "completed" | "cancelled" | "disputed";
+export type OrderStatus =
+  | "pending"
+  | "paid"
+  | "fulfilled"
+  | "completed"
+  | "cancelled"
+  | "disputed";
 
 export interface ListingInfo {
   id: string;
