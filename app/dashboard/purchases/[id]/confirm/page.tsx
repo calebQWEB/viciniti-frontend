@@ -126,7 +126,7 @@ export default function ConfirmCompletionPage() {
               <div className="relative w-14 h-14 rounded-lg overflow-hidden bg-gray-100 shrink-0">
                 <Image
                   src={listingImage}
-                  alt={order.listing?.title}
+                  alt={order.listing?.title || "Listing image"}
                   fill
                   className="object-cover"
                 />
