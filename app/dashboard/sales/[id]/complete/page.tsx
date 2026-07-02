@@ -107,7 +107,7 @@ export default function MarkCompletionPage() {
               <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-gray-100 shrink-0">
                 <Image
                   src={listingImage}
-                  alt={order.listing?.title}
+                  alt={order.listing?.title || "Listing image"}
                   fill
                   className="object-cover"
                 />
