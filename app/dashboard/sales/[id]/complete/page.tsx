@@ -46,8 +46,7 @@ export default function MarkCompletionPage() {
       return response.data;
     },
     onSuccess: () => {
-      // Go back to previous page (purchases/sales dashboard)
-      router.back();
+      router.push("/dashboard/sales");
     },
     onError: (err: any) => {
       setError(

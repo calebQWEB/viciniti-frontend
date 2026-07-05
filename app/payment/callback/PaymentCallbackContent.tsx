@@ -43,8 +43,8 @@ export default function PaymentCallbackPage() {
         return;
       }
 
-      // Get the reference we stored before redirecting
-      const reference = localStorage.getItem("payment_reference");
+      // Get the reference
+      const reference = txRef;
 
       if (!reference) {
         setStatus("failed");
