@@ -4,7 +4,8 @@ export type OrderStatus =
   | "fulfilled"
   | "completed"
   | "cancelled"
-  | "disputed";
+  | "disputed"
+  | "refunded";
 
 export interface ListingInfo {
   id: string;
