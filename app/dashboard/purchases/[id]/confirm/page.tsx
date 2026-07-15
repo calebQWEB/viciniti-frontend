@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { Order } from "@/types/order";
 import MainLayout from "@/components/layout/MainLayout";
+import SuccessModal from "@/components/shared/SuccessModal";
 import {
   ArrowLeft,
   CheckCircle,
@@ -22,7 +23,9 @@ export default function ConfirmCompletionPage() {
   const [rating, setRating] = useState(5);
   const [review, setReview] = useState("");
   const [error, setError] = useState("");
+  const [showSuccess, setShowSuccess] = useState(false);
   const [hoveredStar, setHoveredStar] = useState(0);
+  const queryClient = useQueryClient();
 
   const { data: order, isLoading } = useQuery({
     queryKey: ["order", id],
@@ -41,7 +44,8 @@ export default function ConfirmCompletionPage() {
       return response.data;
     },
     onSuccess: () => {
-      router.back();
+      queryClient.invalidateQueries({ queryKey: ["my-purchases"] });
+      setShowSuccess(true);
     },
     onError: (err: any) => {
       setError(
@@ -301,6 +305,18 @@ export default function ConfirmCompletionPage() {
           </div>
         </form>
       </div>
+
+      {showSuccess && (
+        <SuccessModal
+          title="Completion Confirmed!"
+          message="Thank you for confirming! The seller has been notified and their payout is being processed."
+          buttonText="View My Purchases"
+          onClose={() => {
+            setShowSuccess(false);
+            router.push("/dashboard/purchases");
+          }}
+        />
+      )}
     </MainLayout>
   );
 }

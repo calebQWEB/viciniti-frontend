@@ -36,6 +36,8 @@ export default function CreateListingPage() {
     longitude: null,
   });
 
+  const [generalError, setGeneralError] = useState("");
+
   const [errors, setErrors] = useState<
     Partial<Record<keyof ListingCreate, string>>
   >({});
@@ -46,7 +48,10 @@ export default function CreateListingPage() {
       router.push("/dashboard/listings");
     },
     onError: (error: any) => {
-      console.error("Failed to create listing:", error);
+      setGeneralError(
+        error.response?.data?.detail ||
+          "Failed to create listing. Please try again.",
+      );
     },
   });
 
@@ -239,6 +244,11 @@ export default function CreateListingPage() {
           </div>
 
           {/* Submit */}
+          {generalError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs font-medium">
+              {generalError}
+            </div>
+          )}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-gray-100">
             <button
               type="submit"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { Order } from "@/types/order";
@@ -10,6 +10,7 @@ import PhotoUploader from "@/components/shared/PhotoUploader";
 import { ArrowLeft, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import SuccessModal from "@/components/shared/SuccessModal";
 
 export default function MarkCompletionPage() {
   const { id } = useParams();
@@ -17,6 +18,8 @@ export default function MarkCompletionPage() {
   const [photos, setPhotos] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
+  const [showSuccess, setShowSuccess] = useState(false);
+  const queryClient = useQueryClient();
 
   // Fetch order details
   const { data: order, isLoading } = useQuery({
@@ -46,7 +49,8 @@ export default function MarkCompletionPage() {
       return response.data;
     },
     onSuccess: () => {
-      router.push("/dashboard/sales");
+      queryClient.invalidateQueries({ queryKey: ["my-sales"] });
+      setShowSuccess(true);
     },
     onError: (err: any) => {
       setError(
@@ -87,7 +91,7 @@ export default function MarkCompletionPage() {
         {/* Header */}
         <div className="flex items-center gap-3 mb-8">
           <Link
-            href="/dashboard/sales"
+            href="/dashboard/purchases"
             className="p-2 hover:bg-gray-100 rounded-lg transition"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -203,7 +207,7 @@ export default function MarkCompletionPage() {
           {/* Buttons */}
           <div className="flex gap-3 pt-4">
             <Link
-              href="/dashboard/sales"
+              href="/dashboard/purchases"
               className="flex-1 px-4 py-3 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition text-center"
             >
               Cancel
@@ -228,6 +232,18 @@ export default function MarkCompletionPage() {
           </div>
         </form>
       </div>
+
+      {showSuccess && (
+        <SuccessModal
+          title="Order Marked Complete!"
+          message="The buyer has been notified to confirm completion. You'll receive your payout once they confirm."
+          buttonText="View My Sales"
+          onClose={() => {
+            setShowSuccess(false);
+            router.push("/dashboard/purchases");
+          }}
+        />
+      )}
     </MainLayout>
   );
 }

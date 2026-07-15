@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Variants } from "framer-motion";
 import api from "@/lib/api";
 import MainLayout from "@/components/layout/MainLayout";
 import PhotoUploader from "@/components/shared/PhotoUploader";
+import SuccessModal from "@/components/shared/SuccessModal";
 import {
   ArrowLeft,
   AlertTriangle,
@@ -220,10 +221,12 @@ const itemVariants: Variants = {
 
 export default function DisputePage() {
   const { id } = useParams();
+  const router = useRouter();
   const [responseText, setResponseText] = useState("");
   const [evidencePhotos, setEvidencePhotos] = useState<string[]>([]);
   const [submitError, setSubmitError] = useState("");
   const [showPhotos, setShowPhotos] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const { data: disputeData, isLoading } = useQuery({
     queryKey: ["dispute", id],
@@ -245,7 +248,7 @@ export default function DisputePage() {
     onSuccess: () => {
       setResponseText("");
       setEvidencePhotos([]);
-      window.location.reload();
+      setShowSuccess(true);
     },
     onError: (err: any) => {
       setSubmitError(
@@ -291,7 +294,7 @@ export default function DisputePage() {
             className="flex items-center gap-2 mb-6"
           >
             <Link
-              href="/dashboard/sales"
+              href="/dashboard/purchases"
               className="p-2 hover:bg-gray-100 rounded-lg transition-all duration-200 hover:shadow-sm"
             >
               <ArrowLeft className="w-4 h-4 text-gray-500" />
@@ -345,7 +348,7 @@ export default function DisputePage() {
         {/* Breadcrumb */}
         <motion.div variants={itemVariants} className="flex items-center gap-2">
           <Link
-            href="/dashboard/sales"
+            href="/dashboard/purchases"
             className="group flex items-center gap-1.5 text-xs text-gray-600 bg-white border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all duration-200 rounded-lg px-3 py-2"
           >
             <ArrowLeft
@@ -814,7 +817,7 @@ export default function DisputePage() {
 
               <div className="flex gap-2.5 pt-1">
                 <Link
-                  href="/dashboard/sales"
+                  href="/dashboard/purchases"
                   className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 text-center"
                 >
                   Cancel
@@ -841,6 +844,18 @@ export default function DisputePage() {
           </motion.div>
         )}
       </motion.div>
+
+      {showSuccess && (
+        <SuccessModal
+          title="Defense Submitted!"
+          message="Your response and evidence have been submitted to Flutterwave. They will review your case and get back to you within 7-14 business days."
+          buttonText="Back to Sales"
+          onClose={() => {
+            setShowSuccess(false);
+            router.push("/dashboard/purchases");
+          }}
+        />
+      )}
     </MainLayout>
   );
 }
