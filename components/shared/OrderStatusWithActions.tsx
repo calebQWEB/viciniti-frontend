@@ -114,12 +114,22 @@ export default function OrderStatusWithActions({
           <AlertCircle className="w-4 h-4" />
           Dispute Filed
         </div>
-        <Link
-          href={`/dashboard/sales/${order.id}/dispute`}
-          className="block px-4 py-2 bg-red-50 text-red-700 rounded-lg font-medium text-sm hover:bg-red-100 transition text-center border border-red-200"
-        >
-          View Dispute Details
-        </Link>
+        {isSeller && (
+          <Link
+            href={`/dashboard/sales/${order.id}/dispute`}
+            className="block px-4 py-2 bg-red-50 text-red-700 rounded-lg font-medium text-sm hover:bg-red-100 transition text-center border border-red-200"
+          >
+            View Dispute Details
+          </Link>
+        )}
+        {isBuyer && (
+          <Link
+            href={`/dashboard/purchases/${order.id}/dispute`}
+            className="block px-4 py-2 bg-red-50 text-red-700 rounded-lg font-medium text-sm hover:bg-red-100 transition text-center border border-red-200"
+          >
+            Track Dispute Status
+          </Link>
+        )}
       </div>
     );
   }

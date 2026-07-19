@@ -140,6 +140,8 @@ export default function MyPurchasesPage() {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>("purchases");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   const { data: purchases, isLoading: loadingPurchases } = useQuery({
     queryKey: ["my-purchases"],
@@ -160,6 +162,15 @@ export default function MyPurchasesPage() {
   const isLoading = activeTab === "purchases" ? loadingPurchases : loadingSales;
   const orders = activeTab === "purchases" ? purchases : sales;
   const isSale = activeTab === "sales";
+
+  const filteredOrders = orders?.filter((order) => {
+    const matchesStatus =
+      statusFilter === "all" || order.status === statusFilter;
+    const matchesSearch =
+      searchQuery === "" ||
+      order.id.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
 
   return (
     <div className="min-h-screen bg-[#FDFDFD] pb-12">
@@ -218,6 +229,31 @@ export default function MyPurchasesPage() {
           </div>
         </div>
 
+        {/* Filter & Search */}
+        <div className="flex flex-col sm:flex-row gap-2 mb-4">
+          <input
+            type="text"
+            placeholder="Search by order ID..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="flex-1 px-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/20 focus:border-[#2D6A4F] bg-white text-gray-900 placeholder-gray-400"
+          />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/20 focus:border-[#2D6A4F] bg-white text-gray-900"
+          >
+            <option value="all">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="paid">Paid</option>
+            <option value="fulfilled">Fulfilled</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="disputed">Disputed</option>
+            <option value="refunded">Refunded</option>
+          </select>
+        </div>
+
         {/* Orders List */}
         <div className="space-y-3">
           {isLoading ? (
@@ -227,17 +263,18 @@ export default function MyPurchasesPage() {
                 className="h-24 w-full bg-gray-50 animate-pulse rounded-xl"
               />
             ))
-          ) : orders && orders.length > 0 ? (
+          ) : filteredOrders && filteredOrders.length > 0 ? (
             <>
               <div className="flex items-center justify-between mb-1.5">
                 <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400">
                   Transaction History
                 </p>
                 <p className="text-[9px] text-gray-400 font-medium">
-                  {orders.length} transaction{orders.length !== 1 ? "s" : ""}
+                  {filteredOrders.length} transaction
+                  {filteredOrders.length !== 1 ? "s" : ""}
                 </p>
               </div>
-              {orders.map((order) => (
+              {filteredOrders.map((order) => (
                 <OrderCard
                   key={order.id}
                   order={order}
