@@ -36,6 +36,10 @@ export interface Order {
   completed_at: string | null;
   buyer_accepted_at: string | null;
 
+  // Payout tracking fields
+  payout_due_at: string | null;
+  payout_completed_at: string | null;
+
   // Relationship fields
   listing?: ListingInfo;
   buyer?: {

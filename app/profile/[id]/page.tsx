@@ -30,7 +30,7 @@ import {
 interface UserStats {
   listings: Listing[];
   services: Service[];
-  transaction_count: number;
+  completed_orders_count: number;
 }
 
 type Tab = "listings" | "services" | "reviews";
@@ -305,7 +305,7 @@ export default function PublicProfilePage() {
                 </div>
                 <div>
                   <p className="text-xl font-black text-gray-900 leading-none">
-                    {stats?.transaction_count ?? 0}
+                    {stats?.completed_orders_count ?? 0}
                   </p>
                   <p className="text-[10px] uppercase tracking-[0.24em] text-gray-400 mt-1">
                     Transactions

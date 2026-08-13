@@ -114,6 +114,52 @@ export default function OrderStatusWithActions({
 
   // Completed — buyer confirmed receipt
   if (order.status === "completed") {
+    if (isSeller) {
+      // Payout already completed
+      if (order.payout_completed_at) {
+        return (
+          <div
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold border ${badge.green}`}
+          >
+            <CheckCircle className="w-3.5 h-3.5" />
+            Paid Out
+          </div>
+        );
+      }
+
+      // Payout scheduled, still pending
+      if (order.payout_due_at) {
+        const payoutDate = new Date(order.payout_due_at).toLocaleDateString(
+          "en-NG",
+          { day: "numeric", month: "short", year: "numeric" },
+        );
+        return (
+          <div
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold border ${badge.amber}`}
+          >
+            <Clock className="w-3.5 h-3.5" />
+            Payout on {payoutDate}
+          </div>
+        );
+      }
+
+      // No payout scheduled — seller needs to add a bank account
+      return (
+        <div className="space-y-2.5">
+          <div
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold border ${badge.red}`}
+          >
+            <AlertCircle className="w-3.5 h-3.5" />
+            Action Needed: Add Bank Account
+          </div>
+          <Link href="/dashboard/profile" className={primaryButton}>
+            Add Bank Account
+          </Link>
+        </div>
+      );
+    }
+
+    // Buyer view — unchanged
     return (
       <div
         className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold border ${badge.green}`}
