@@ -328,7 +328,7 @@ export default function DashboardLayout({
 
         {/* Main Content */}
         <main
-          className={`flex-1 p-4 pt-20 transition-[margin] duration-300 ease-in-out sm:p-6 md:p-8 lg:pt-6 ${
+          className={`flex-1 min-w-0 p-4 pt-20 transition-[margin] duration-300 ease-in-out sm:p-6 md:p-8 lg:pt-6 ${
             isExpanded ? "lg:ml-64" : "lg:ml-20"
           }`}
         >

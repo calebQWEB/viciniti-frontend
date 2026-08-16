@@ -59,10 +59,10 @@ export default function ServiceDetailPage() {
       });
       const booking = bookingResponse.data;
 
-      // Step 2 — Initiate payment using booking amount
+      // Step 2 — Initiate payment using the linked Order, not the Booking itself
       const paymentResponse = await api.post("/transactions/initiate-payment", {
         amount: booking.amount,
-        order_id: booking.id,
+        order_id: booking.order_id,
       });
 
       return paymentResponse.data;

@@ -38,6 +38,16 @@ const STATUS_CONFIG = {
     Icon: AlertTriangle,
   },
   chargeback_won: {
+    label: "Dispute Unsuccessful",
+    description:
+      "The card issuer decided in favor of the seller. Your payment will not be refunded.",
+    bannerClass: "bg-amber-50 border-amber-200",
+    iconClass: "bg-amber-100 text-amber-600",
+    labelClass: "text-amber-900",
+    descClass: "text-amber-700",
+    Icon: XCircle,
+  },
+  chargeback_lost: {
     label: "Dispute Won — Refund Issued",
     description:
       "Your dispute was successful. The transaction amount will be refunded to your bank account within 5-10 business days.",
@@ -46,16 +56,6 @@ const STATUS_CONFIG = {
     labelClass: "text-emerald-900",
     descClass: "text-emerald-700",
     Icon: CheckCircle2,
-  },
-  chargeback_lost: {
-    label: "Dispute Unsuccessful",
-    description:
-      "Unfortunately, the card issuer decided in favor of the seller. The transaction amount will not be refunded.",
-    bannerClass: "bg-amber-50 border-amber-200",
-    iconClass: "bg-amber-100 text-amber-600",
-    labelClass: "text-amber-900",
-    descClass: "text-amber-700",
-    Icon: XCircle,
   },
 };
 

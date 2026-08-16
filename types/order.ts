@@ -22,7 +22,8 @@ export interface CompletionProof {
 
 export interface Order {
   id: string;
-  listing_id: string;
+  listing_id: string | null;
+  service_id: string | null;
   buyer_id: string;
   seller_id: string;
   amount: number;
@@ -42,14 +43,15 @@ export interface Order {
 
   // Relationship fields
   listing?: ListingInfo;
+  service?: ListingInfo;
   buyer?: {
     id: string;
-    full_name: string;
+    name: string;
     email: string;
   };
   seller?: {
     id: string;
-    full_name: string;
+    name: string;
     email: string;
   };
 }
