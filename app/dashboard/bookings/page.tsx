@@ -51,45 +51,92 @@ function ActionCell({
   booking,
   isRequest,
   onUpdateStatus,
+  onPayNow,
   isUpdating,
+  isPaying,
 }: {
   booking: Booking;
   isRequest: boolean;
   onUpdateStatus: (id: string, status: BookingStatus) => void;
+  onPayNow: (booking: Booking) => void;
   isUpdating: boolean;
+  isPaying: boolean;
 }) {
-  if (booking.status !== "pending") return null;
-
-  if (isRequest) {
+  // Pending request — provider can accept/decline, client can withdraw
+  if (booking.status === "pending") {
+    if (isRequest) {
+      return (
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => onUpdateStatus(booking.id, "confirmed")}
+            disabled={isUpdating}
+            className="px-3 py-1.5 bg-[#2D6A4F] hover:bg-[#1b4332] text-white rounded-lg text-[11px] font-bold transition-all active:scale-95 disabled:opacity-50 whitespace-nowrap"
+          >
+            {isUpdating ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              "Accept"
+            )}
+          </button>
+          <button
+            onClick={() => onUpdateStatus(booking.id, "cancelled")}
+            disabled={isUpdating}
+            className="px-3 py-1.5 bg-white border border-gray-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 rounded-lg text-[11px] font-bold transition-all disabled:opacity-50 whitespace-nowrap"
+          >
+            Decline
+          </button>
+        </div>
+      );
+    }
     return (
-      <div className="flex items-center gap-1.5">
-        <button
-          onClick={() => onUpdateStatus(booking.id, "confirmed")}
-          disabled={isUpdating}
-          className="px-3 py-1.5 bg-[#2D6A4F] hover:bg-[#1b4332] text-white rounded-lg text-[11px] font-bold transition-all active:scale-95 disabled:opacity-50 whitespace-nowrap"
-        >
-          {isUpdating ? <Loader2 className="w-3 h-3 animate-spin" /> : "Accept"}
-        </button>
-        <button
-          onClick={() => onUpdateStatus(booking.id, "cancelled")}
-          disabled={isUpdating}
-          className="px-3 py-1.5 bg-white border border-gray-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 rounded-lg text-[11px] font-bold transition-all disabled:opacity-50 whitespace-nowrap"
-        >
-          Decline
-        </button>
-      </div>
+      <button
+        onClick={() => onUpdateStatus(booking.id, "cancelled")}
+        disabled={isUpdating}
+        className="px-3 py-1.5 border border-gray-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 rounded-lg text-[11px] font-bold transition-all disabled:opacity-50 whitespace-nowrap"
+      >
+        Withdraw
+      </button>
     );
   }
 
-  return (
-    <button
-      onClick={() => onUpdateStatus(booking.id, "cancelled")}
-      disabled={isUpdating}
-      className="px-3 py-1.5 border border-gray-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 rounded-lg text-[11px] font-bold transition-all disabled:opacity-50 whitespace-nowrap"
-    >
-      Cancel
-    </button>
-  );
+  // Confirmed but not yet paid — client pays, either side can cancel
+  if (booking.status === "confirmed" && booking.order_status === "pending") {
+    if (!isRequest) {
+      return (
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => onPayNow(booking)}
+            disabled={isPaying}
+            className="px-3 py-1.5 bg-[#2D6A4F] hover:bg-[#1b4332] text-white rounded-lg text-[11px] font-bold transition-all active:scale-95 disabled:opacity-50 whitespace-nowrap"
+          >
+            {isPaying ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              "Pay Now"
+            )}
+          </button>
+          <button
+            onClick={() => onUpdateStatus(booking.id, "cancelled")}
+            disabled={isUpdating}
+            className="px-3 py-1.5 border border-gray-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 rounded-lg text-[11px] font-bold transition-all disabled:opacity-50 whitespace-nowrap"
+          >
+            Cancel
+          </button>
+        </div>
+      );
+    }
+    return (
+      <button
+        onClick={() => onUpdateStatus(booking.id, "cancelled")}
+        disabled={isUpdating}
+        className="px-3 py-1.5 border border-gray-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 rounded-lg text-[11px] font-bold transition-all disabled:opacity-50 whitespace-nowrap"
+      >
+        Cancel
+      </button>
+    );
+  }
+
+  return null;
 }
 
 export default function MyBookingsPage() {
@@ -125,6 +172,21 @@ export default function MyBookingsPage() {
     onError: () => setUpdatingId(null),
   });
 
+  const { mutate: payNow, isPending: isPaying } = useMutation({
+    mutationFn: async (booking: Booking) => {
+      const response = await api.post("/transactions/initiate-payment", {
+        amount: booking.amount,
+        order_id: booking.order_id,
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      localStorage.setItem("payment_reference", data.reference);
+      localStorage.setItem("payment_type", "booking");
+      window.location.href = data.payment_link;
+    },
+  });
+
   const handleUpdateStatus = (id: string, status: BookingStatus) => {
     setUpdatingId(id);
     updateStatus({ id, status });
@@ -157,6 +219,15 @@ export default function MyBookingsPage() {
     { key: "my-bookings", label: "My Bookings" },
     { key: "my-requests", label: "Requests" },
   ];
+
+  function getPaymentIndicator(
+    booking: Booking,
+  ): { text: string; tone: "green" | "amber" } | null {
+    if (booking.status !== "confirmed") return null;
+    if (booking.order_status === "pending")
+      return { text: "Unpaid", tone: "amber" };
+    return { text: "Paid", tone: "green" };
+  }
 
   return (
     <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#FDFDFD] pb-12">
@@ -256,7 +327,7 @@ export default function MyBookingsPage() {
                         {isRequest ? "Client" : "Provider"}
                       </th>
                       <th className="text-left text-[9px] font-bold uppercase tracking-widest text-gray-400 px-4 py-3">
-                        Scheduled
+                        Scheduled for
                       </th>
                       <th className="text-left text-[9px] font-bold uppercase tracking-widest text-gray-400 px-4 py-3">
                         Amount
@@ -339,11 +410,25 @@ export default function MyBookingsPage() {
                             </p>
                           </td>
                           <td className="px-4 py-3">
-                            <StatusPill status={booking.status} />
+                            <div className="flex flex-col items-start gap-1">
+                              <StatusPill status={booking.status} />
+                              {(() => {
+                                const indicator = getPaymentIndicator(booking);
+                                return indicator ? (
+                                  <span
+                                    className={`inline-flex items-center text-[9px] font-bold px-2 py-0.5 rounded-md border whitespace-nowrap ${TONE_CLASSES[indicator.tone]}`}
+                                  >
+                                    {indicator.text}
+                                  </span>
+                                ) : null;
+                              })()}
+                            </div>
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex justify-end">
                               <ActionCell
+                                onPayNow={payNow}
+                                isPaying={isPaying}
                                 booking={booking}
                                 isRequest={isRequest}
                                 onUpdateStatus={handleUpdateStatus}
@@ -391,7 +476,19 @@ export default function MyBookingsPage() {
                           <p className="font-bold text-gray-900 text-xs truncate min-w-0">
                             {serviceTitle}
                           </p>
-                          <StatusPill status={booking.status} />
+                          <div className="flex flex-col items-end gap-1">
+                            <StatusPill status={booking.status} />
+                            {(() => {
+                              const indicator = getPaymentIndicator(booking);
+                              return indicator ? (
+                                <span
+                                  className={`inline-flex items-center text-[9px] font-bold px-2 py-0.5 rounded-md border whitespace-nowrap ${TONE_CLASSES[indicator.tone]}`}
+                                >
+                                  {indicator.text}
+                                </span>
+                              ) : null;
+                            })()}
+                          </div>
                         </div>
                         <p className="text-[10px] text-gray-400 font-medium truncate">
                           {(isRequest
@@ -418,6 +515,8 @@ export default function MyBookingsPage() {
                     </div>
                     <div className="flex items-center justify-end pt-2 border-t border-gray-50">
                       <ActionCell
+                        onPayNow={payNow}
+                        isPaying={isPaying}
                         booking={booking}
                         isRequest={isRequest}
                         onUpdateStatus={handleUpdateStatus}

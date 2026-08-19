@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
-import { formatPrice } from "@/lib/utils";
+import { getInitials } from "@/lib/utils";
+import Image from "next/image";
 import {
   Send,
   MessageSquare,
@@ -15,6 +16,12 @@ import {
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
+interface UserSummary {
+  id: string;
+  name: string;
+  avatar: string | null;
+}
+
 interface Message {
   id: string;
   sender_id: string;
@@ -22,13 +29,17 @@ interface Message {
   content: string;
   read: boolean;
   created_at: string;
+  sender?: UserSummary;
+  receiver?: UserSummary;
 }
 
 interface Contact {
   user_id: string;
+  name: string;
+  avatar: string | null;
   last_message: string;
   last_message_time: string;
-  unread: boolean;
+  unread_count: number;
 }
 
 function formatTime(dateStr: string) {
@@ -41,10 +52,55 @@ function formatTime(dateStr: string) {
       minute: "2-digit",
     });
   }
+  return date.toLocaleDateString("en-NG", { day: "numeric", month: "short" });
+}
+
+function formatDateDivider(dateStr: string) {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+
+  if (date.toDateString() === now.toDateString()) return "Today";
+  if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
   return date.toLocaleDateString("en-NG", {
     day: "numeric",
-    month: "short",
+    month: "long",
+    year: "numeric",
   });
+}
+
+function Avatar({
+  name,
+  avatar,
+  size = "md",
+  isActive = false,
+}: {
+  name: string;
+  avatar: string | null;
+  size?: "md" | "lg" | "xl";
+  isActive?: boolean;
+}) {
+  const sizeClasses = {
+    md: "w-10 h-10 text-xs",
+    lg: "w-11 h-11 text-sm",
+    xl: "w-12 h-12 text-sm",
+  };
+  return (
+    <div
+      className={`relative shrink-0 rounded-full flex items-center justify-center font-bold shadow-sm overflow-hidden ${sizeClasses[size]} ${
+        isActive
+          ? "bg-white/20 text-white"
+          : "bg-gradient-to-br from-[#2D6A4F]/15 to-[#2D6A4F]/5 text-[#2D6A4F]"
+      }`}
+    >
+      {avatar ? (
+        <Image src={avatar} alt={name} fill className="object-cover" />
+      ) : (
+        getInitials(name)
+      )}
+    </div>
+  );
 }
 
 export default function MessagesPage() {
@@ -59,38 +115,20 @@ export default function MessagesPage() {
   const [search, setSearch] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { data: inbox, isLoading: loadingInbox } = useQuery({
-    queryKey: ["inbox"],
+  const { data: contacts, isLoading: loadingContacts } = useQuery({
+    queryKey: ["contacts"],
     queryFn: async () => {
-      const response = await api.get("/messages/inbox");
-      return response.data as Message[];
+      const response = await api.get("/messages/contacts");
+      return response.data as Contact[];
     },
     refetchInterval: 5000,
   });
 
-  const contacts = inbox
-    ? Array.from(
-        inbox
-          .reduce((map, msg) => {
-            const otherId =
-              msg.sender_id === user?.id ? msg.receiver_id : msg.sender_id;
-            if (!map.has(otherId)) {
-              map.set(otherId, {
-                user_id: otherId,
-                last_message: msg.content,
-                last_message_time: msg.created_at,
-                unread: !msg.read && msg.receiver_id === user?.id,
-              });
-            }
-            return map;
-          }, new Map<string, Contact>())
-          .values(),
-      )
-    : [];
-
-  const filteredContacts = contacts.filter((c) =>
-    c.user_id.toLowerCase().includes(search.toLowerCase()),
+  const filteredContacts = (contacts ?? []).filter((c) =>
+    c.name.toLowerCase().includes(search.toLowerCase()),
   );
+
+  const activeContact = contacts?.find((c) => c.user_id === activeContactId);
 
   const { data: conversation, isLoading: loadingConversation } = useQuery({
     queryKey: ["conversation", activeContactId],
@@ -105,11 +143,7 @@ export default function MessagesPage() {
   });
 
   useEffect(() => {
-    if (activeContactId) {
-      setShowContacts(false);
-    } else {
-      setShowContacts(true);
-    }
+    setShowContacts(!activeContactId);
   }, [activeContactId]);
 
   useEffect(() => {
@@ -127,7 +161,7 @@ export default function MessagesPage() {
       queryClient.invalidateQueries({
         queryKey: ["conversation", activeContactId],
       });
-      queryClient.invalidateQueries({ queryKey: ["inbox"] });
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
     },
   });
 
@@ -143,57 +177,73 @@ export default function MessagesPage() {
     }
   };
 
+  const groupedConversation: { divider: string; messages: Message[] }[] = [];
+  conversation?.forEach((msg) => {
+    const divider = formatDateDivider(msg.created_at);
+    const lastGroup = groupedConversation[groupedConversation.length - 1];
+    if (lastGroup && lastGroup.divider === divider) {
+      lastGroup.messages.push(msg);
+    } else {
+      groupedConversation.push({ divider, messages: [msg] });
+    }
+  });
+
+  const activeContactName =
+    activeContact?.name ??
+    conversation?.find((m) => m.sender_id === activeContactId)?.sender?.name ??
+    conversation?.find((m) => m.receiver_id === activeContactId)?.receiver
+      ?.name ??
+    "Conversation";
+  const activeContactAvatar =
+    activeContact?.avatar ??
+    conversation?.find((m) => m.sender_id === activeContactId)?.sender
+      ?.avatar ??
+    null;
+
   return (
-    <div className="min-h-screen bg-[#FDFDFD] pb-14">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#FDFDFD] pb-14">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 sm:pt-10">
         {/* Header */}
-        <div className="space-y-1.5 mb-4 sm:mb-6">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#2D6A4F]/10 text-[#2D6A4F] text-[10px] font-bold uppercase tracking-widest shadow-sm">
-            <MessageSquare className="w-2.5 h-2.5" />
-            Inbox
-          </div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-gray-900 tracking-tight">
+        <div className="flex items-center gap-2.5 mb-5">
+          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
             Messages
           </h1>
-          <p className="text-xs sm:text-sm text-gray-500 font-medium">
-            Manage your conversations with buyers and sellers.
-          </p>
         </div>
 
         {/* Chat Layout Container */}
         <div
-          className="bg-white/80 backdrop-blur-xl border border-white/40 rounded-xl sm:rounded-2xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-gray-100"
-          style={{ height: "calc(100vh - 180px)", minHeight: "460px" }}
+          className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)]"
+          style={{ height: "calc(100vh - 160px)", minHeight: "520px" }}
         >
           <div className="flex h-full">
             {/* Left Panel — Contacts */}
             <div
-              className={`w-full lg:w-[280px] border-r border-gray-100/80 bg-white/50 flex flex-col ${
+              className={`w-full lg:w-[340px] border-r border-gray-100 bg-white flex flex-col ${
                 showContacts ? "flex" : "hidden lg:flex"
               }`}
             >
               {/* Search */}
-              <div className="p-3 sm:p-4 border-b border-gray-100/80">
+              <div className="p-4 border-b border-gray-100">
                 <div className="relative group">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 group-focus-within:text-[#2D6A4F] transition-colors" />
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 group-focus-within:text-[#2D6A4F] transition-colors" />
                   <input
                     type="text"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search messages..."
-                    className="w-full pl-9 pr-3 py-2 bg-gray-50/50 hover:bg-gray-50 rounded-lg text-xs font-medium text-gray-700 placeholder:text-gray-400 border border-gray-200/80 focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/20 focus:border-[#2D6A4F]/30 transition-all shadow-sm"
+                    placeholder="Search by name..."
+                    className="w-full pl-10 pr-3 py-3 bg-gray-50 rounded-xl text-sm font-medium text-gray-700 placeholder:text-gray-400 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/20 focus:border-[#2D6A4F]/40 focus:bg-white transition-all"
                   />
                 </div>
               </div>
 
               {/* Contact List */}
-              <div className="flex-1 overflow-y-auto px-1.5 sm:px-2 py-1.5 space-y-0.5 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full">
-                {loadingInbox ? (
-                  <div className="space-y-1.5 p-2">
+              <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1">
+                {loadingContacts ? (
+                  <div className="space-y-2 p-2">
                     {[...Array(5)].map((_, i) => (
                       <div
                         key={i}
-                        className="h-12 bg-gray-100/50 animate-pulse rounded-xl"
+                        className="h-16 bg-gray-50 animate-pulse rounded-xl"
                       />
                     ))}
                   </div>
@@ -207,68 +257,64 @@ export default function MessagesPage() {
                           setActiveContactId(contact.user_id);
                           setShowContacts(false);
                         }}
-                        className={`w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl transition-all text-left group ${
+                        className={`w-full flex items-center gap-3 px-3 py-3.5 rounded-xl transition-all text-left ${
                           isActive
                             ? "bg-[#2D6A4F] shadow-md shadow-[#2D6A4F]/20"
                             : "hover:bg-gray-50"
                         }`}
                       >
-                        {/* Avatar */}
-                        <div
-                          className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shrink-0 font-bold text-xs shadow-sm transition-colors ${
-                            isActive
-                              ? "bg-white/20 text-white"
-                              : "bg-gradient-to-br from-[#2D6A4F]/10 to-[#2D6A4F]/5 text-[#2D6A4F]"
-                          }`}
-                        >
-                          {contact.user_id.slice(0, 2).toUpperCase()}
-                        </div>
-
+                        <Avatar
+                          name={contact.name}
+                          avatar={contact.avatar}
+                          size="lg"
+                          isActive={isActive}
+                        />
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-0.5">
+                          <div className="flex items-center justify-between mb-1 gap-2">
                             <p
-                              className={`text-xs font-bold truncate ${
-                                isActive ? "text-white" : "text-gray-900"
-                              }`}
+                              className={`text-sm font-bold truncate ${isActive ? "text-white" : "text-gray-900"}`}
                             >
-                              User {contact.user_id.slice(-5).toUpperCase()}
+                              {contact.name}
                             </p>
                             <span
-                              className={`text-[10px] font-medium shrink-0 ml-1.5 ${
-                                isActive ? "text-white/80" : "text-gray-400"
-                              }`}
+                              className={`text-xs font-medium shrink-0 ${isActive ? "text-white/70" : "text-gray-400"}`}
                             >
                               {formatTime(contact.last_message_time)}
                             </span>
                           </div>
-                          <p
-                            className={`text-[11px] truncate font-medium ${
-                              isActive
-                                ? "text-white/90"
-                                : contact.unread
-                                  ? "text-gray-900 font-semibold"
-                                  : "text-gray-500"
-                            }`}
-                          >
-                            {contact.last_message}
-                          </p>
+                          <div className="flex items-center justify-between gap-2">
+                            <p
+                              className={`text-xs truncate font-medium ${
+                                isActive
+                                  ? "text-white/85"
+                                  : contact.unread_count > 0
+                                    ? "text-gray-900 font-semibold"
+                                    : "text-gray-500"
+                              }`}
+                            >
+                              {contact.last_message}
+                            </p>
+                            {contact.unread_count > 0 && !isActive && (
+                              <span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#2D6A4F] text-white text-[10px] font-black flex items-center justify-center">
+                                {contact.unread_count > 9
+                                  ? "9+"
+                                  : contact.unread_count}
+                              </span>
+                            )}
+                          </div>
                         </div>
-
-                        {contact.unread && !isActive && (
-                          <div className="w-2 h-2 rounded-full bg-[#2D6A4F] shrink-0 shadow-sm" />
-                        )}
                       </button>
                     );
                   })
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full py-10 px-4 text-center">
-                    <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center mb-3 shadow-sm border border-gray-100">
-                      <MessageSquare className="w-5 h-5 text-gray-400" />
+                    <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3 border border-gray-100">
+                      <MessageSquare className="w-6 h-6 text-gray-300" />
                     </div>
-                    <p className="text-xs font-bold text-gray-900">
+                    <p className="text-sm font-bold text-gray-900">
                       No conversations yet
                     </p>
-                    <p className="text-[11px] text-gray-500 mt-1 font-medium">
+                    <p className="text-xs text-gray-400 mt-1 font-medium">
                       When you connect with buyers or sellers, messages will
                       appear here.
                     </p>
@@ -279,47 +325,46 @@ export default function MessagesPage() {
 
             {/* Right Panel — Active Conversation */}
             <div
-              className={`flex-1 flex flex-col bg-white ${
-                showContacts ? "hidden lg:flex" : "flex"
-              }`}
+              className={`flex-1 flex flex-col min-w-0 ${showContacts ? "hidden lg:flex" : "flex"}`}
             >
               {activeContactId ? (
                 <>
                   {/* Conversation Header */}
-                  <div className="flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-gray-100/80 bg-white/80 backdrop-blur-sm z-10">
+                  <div className="flex items-center gap-3 px-4 sm:px-5 py-3.5 sm:py-4 border-b border-gray-100 bg-white">
                     <button
-                      onClick={() => {
-                        setActiveContactId(null);
-                        setShowContacts(true);
-                      }}
-                      className="lg:hidden w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                      onClick={() => setActiveContactId(null)}
+                      className="lg:hidden w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors shrink-0"
                     >
-                      <ArrowLeft className="w-3.5 h-3.5 text-gray-600" />
+                      <ArrowLeft className="w-4 h-4 text-gray-600" />
                     </button>
-                    <div className="relative">
-                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-[#2D6A4F]/10 to-[#2D6A4F]/5 flex items-center justify-center font-bold text-[#2D6A4F] text-xs shadow-sm">
-                        {activeContactId.slice(0, 2).toUpperCase()}
-                      </div>
-                      <div className="absolute bottom-0 right-0 w-2 h-2 bg-green-500 border-2 border-white rounded-full"></div>
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-900 text-xs sm:text-sm">
-                        User {activeContactId.slice(-5).toUpperCase()}
-                      </p>
-                      <p className="text-[10px] text-green-600 font-medium">
-                        Online
+                    <Avatar
+                      name={activeContactName}
+                      avatar={activeContactAvatar}
+                      size="xl"
+                    />
+                    <div className="min-w-0">
+                      <p className="font-bold text-gray-900 text-sm sm:text-base truncate">
+                        {activeContactName}
                       </p>
                     </div>
                   </div>
 
                   {/* Messages Area */}
-                  <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 sm:py-4 space-y-2 sm:space-y-3 bg-[#F8FAFC]/50 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full">
+                  <div
+                    className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 space-y-4"
+                    style={{
+                      backgroundColor: "#F6F8F6",
+                      backgroundImage:
+                        "radial-gradient(circle, rgba(45,106,79,0.06) 1px, transparent 1px)",
+                      backgroundSize: "20px 20px",
+                    }}
+                  >
                     {loadingConversation ? (
-                      <div className="space-y-2 sm:space-y-3">
+                      <div className="space-y-4">
                         {[...Array(4)].map((_, i) => (
                           <div
                             key={i}
-                            className={`h-8 sm:h-10 bg-gray-200/50 animate-pulse rounded-xl w-2/3 max-w-sm ${
+                            className={`h-11 bg-gray-200/50 animate-pulse rounded-2xl w-2/3 max-w-sm ${
                               i % 2 === 0
                                 ? "ml-auto rounded-tr-sm"
                                 : "rounded-tl-sm"
@@ -327,59 +372,60 @@ export default function MessagesPage() {
                           />
                         ))}
                       </div>
-                    ) : conversation && conversation.length > 0 ? (
-                      conversation.map((msg) => {
-                        const isMine = msg.sender_id === user?.id;
-                        return (
-                          <div
-                            key={msg.id}
-                            className={`flex ${
-                              isMine ? "justify-end" : "justify-start"
-                            }`}
-                          >
-                            <div
-                              className={`group max-w-[85%] sm:max-w-[75%] lg:max-w-[65%] flex flex-col gap-1 ${
-                                isMine ? "items-end" : "items-start"
-                              }`}
-                            >
-                              <div
-                                className={`px-3 py-2 rounded-2xl text-xs sm:text-sm shadow-sm ${
-                                  isMine
-                                    ? "bg-gradient-to-br from-[#2D6A4F] to-[#1b4332] text-white rounded-tr-[4px]"
-                                    : "bg-white border border-gray-100 text-gray-800 rounded-tl-[4px]"
-                                }`}
-                                style={{ wordBreak: "break-word" }}
-                              >
-                                {msg.content}
-                              </div>
-                              <div className="flex items-center gap-1 px-1">
-                                <span className="text-[10px] text-gray-400 font-medium">
-                                  {formatTime(msg.created_at)}
-                                </span>
-                                {isMine && (
-                                  <CheckCheck
-                                    className={`w-3 h-3 ${
-                                      msg.read
-                                        ? "text-[#2D6A4F]"
-                                        : "text-gray-300"
-                                    }`}
-                                  />
-                                )}
-                              </div>
-                            </div>
+                    ) : groupedConversation.length > 0 ? (
+                      groupedConversation.map((group) => (
+                        <div key={group.divider} className="space-y-3">
+                          <div className="flex items-center justify-center">
+                            <span className="text-xs font-bold uppercase tracking-widest text-gray-500 bg-white px-3 py-1.5 rounded-full border border-gray-100 shadow-sm">
+                              {group.divider}
+                            </span>
                           </div>
-                        );
-                      })
+                          {group.messages.map((msg) => {
+                            const isMine = msg.sender_id === user?.id;
+                            return (
+                              <div
+                                key={msg.id}
+                                className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+                              >
+                                <div
+                                  className={`max-w-[85%] sm:max-w-[65%] flex flex-col gap-1.5 ${isMine ? "items-end" : "items-start"}`}
+                                >
+                                  <div
+                                    className={`px-4 py-3 rounded-2xl text-sm sm:text-base leading-relaxed shadow-sm ${
+                                      isMine
+                                        ? "bg-[#2D6A4F] text-white rounded-tr-[4px]"
+                                        : "bg-white border border-gray-100 text-gray-800 rounded-tl-[4px]"
+                                    }`}
+                                    style={{ wordBreak: "break-word" }}
+                                  >
+                                    {msg.content}
+                                  </div>
+                                  <div className="flex items-center gap-1.5 px-1">
+                                    <span className="text-xs text-gray-400 font-medium">
+                                      {formatTime(msg.created_at)}
+                                    </span>
+                                    {isMine && (
+                                      <CheckCheck
+                                        className={`w-3.5 h-3.5 ${msg.read ? "text-[#2D6A4F]" : "text-gray-300"}`}
+                                      />
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ))
                     ) : (
                       <div className="flex flex-col items-center justify-center h-full text-center space-y-2">
-                        <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100">
-                          <span className="text-lg">👋</span>
+                        <div className="w-11 h-11 bg-white rounded-full flex items-center justify-center border border-gray-100 shadow-sm">
+                          <span className="text-xl">👋</span>
                         </div>
                         <div>
-                          <p className="text-xs font-bold text-gray-900">
+                          <p className="text-sm font-bold text-gray-900">
                             Say hello!
                           </p>
-                          <p className="text-[11px] text-gray-500 font-medium mt-0.5">
+                          <p className="text-xs text-gray-400 font-medium mt-0.5">
                             This is the beginning of your conversation.
                           </p>
                         </div>
@@ -389,53 +435,49 @@ export default function MessagesPage() {
                   </div>
 
                   {/* Message Input */}
-                  <div className="p-2.5 sm:p-3 lg:p-4 bg-white border-t border-gray-100/80">
-                    <div className="flex items-end gap-2 bg-gray-50/80 rounded-xl sm:rounded-2xl p-1.5 pl-3 border border-gray-200/60 focus-within:border-[#2D6A4F]/40 focus-within:bg-white focus-within:ring-4 focus-within:ring-[#2D6A4F]/5 transition-all shadow-sm">
+                  <div className="p-3 sm:p-4 bg-white border-t border-gray-100">
+                    <div className="flex items-end gap-2.5 bg-gray-50 rounded-2xl p-2 pl-4 border border-gray-200 focus-within:border-[#2D6A4F]/40 focus-within:bg-white focus-within:ring-4 focus-within:ring-[#2D6A4F]/5 transition-all">
                       <textarea
                         value={messageText}
                         onChange={(e) => setMessageText(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder="Type a message..."
                         rows={1}
-                        className="flex-1 bg-transparent text-xs sm:text-sm font-medium text-gray-800 placeholder:text-gray-400 py-1.5 sm:py-2 focus:outline-none resize-none max-h-20 sm:max-h-28 min-h-[32px] sm:min-h-[36px]"
-                        style={{ scrollbarWidth: "none" }}
+                        className="flex-1 bg-transparent text-sm sm:text-base font-medium text-gray-800 placeholder:text-gray-400 py-2 focus:outline-none resize-none max-h-32 min-h-[40px]"
                       />
                       <button
                         onClick={handleSend}
                         disabled={sending || !messageText.trim()}
-                        className="w-8 h-8 sm:w-9 sm:h-9 bg-[#2D6A4F] hover:bg-[#1b4332] disabled:opacity-40 disabled:hover:bg-[#2D6A4F] rounded-full flex items-center justify-center transition-all active:scale-95 shrink-0 shadow-md shadow-[#2D6A4F]/20"
+                        className="w-10 h-10 bg-[#2D6A4F] hover:bg-[#1b4332] disabled:opacity-40 disabled:hover:bg-[#2D6A4F] rounded-full flex items-center justify-center transition-all active:scale-95 shrink-0 shadow-md shadow-[#2D6A4F]/20"
                       >
                         {sending ? (
-                          <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
+                          <Loader2 className="w-4 h-4 text-white animate-spin" />
                         ) : (
-                          <Send className="w-3 h-3 text-white ml-0.5" />
+                          <Send className="w-3.5 h-3.5 text-white ml-0.5" />
                         )}
                       </button>
                     </div>
-                    <p className="hidden sm:block text-[10px] text-gray-400 font-medium mt-2 text-center">
-                      Press{" "}
-                      <kbd className="px-1 py-0.5 bg-gray-100 rounded text-gray-500 font-sans">
-                        Enter
-                      </kbd>{" "}
-                      to send ·{" "}
-                      <kbd className="px-1 py-0.5 bg-gray-100 rounded text-gray-500 font-sans">
-                        Shift + Enter
-                      </kbd>{" "}
-                      for new line
-                    </p>
                   </div>
                 </>
               ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center px-6 sm:px-8 bg-gray-50/30">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-sm border border-gray-100">
-                    <MessageSquare className="w-5 h-5 sm:w-7 sm:h-7 text-gray-300" />
+                <div
+                  className="flex flex-col items-center justify-center h-full text-center px-6 sm:px-8"
+                  style={{
+                    backgroundColor: "#F6F8F6",
+                    backgroundImage:
+                      "radial-gradient(circle, rgba(45,106,79,0.06) 1px, transparent 1px)",
+                    backgroundSize: "20px 20px",
+                  }}
+                >
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-gray-100">
+                    <MessageSquare className="w-7 h-7 sm:w-8 sm:h-8 text-gray-300" />
                   </div>
-                  <h3 className="text-base sm:text-lg font-extrabold text-gray-900">
+                  <h3 className="text-lg sm:text-xl font-black text-gray-900">
                     Your Messages
                   </h3>
-                  <p className="text-gray-500 max-w-sm mx-auto mt-1.5 font-medium text-xs sm:text-sm leading-relaxed">
-                    Select an existing conversation from the sidebar or start a
-                    new one to connect with others.
+                  <p className="text-gray-400 max-w-sm mx-auto mt-2 font-medium text-sm leading-relaxed">
+                    Select a conversation from the list to catch up, or start a
+                    new one from a listing or service page.
                   </p>
                 </div>
               )}

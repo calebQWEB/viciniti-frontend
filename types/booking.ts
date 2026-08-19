@@ -1,3 +1,5 @@
+import { OrderStatus } from "./order";
+
 export type BookingStatus = "pending" | "confirmed" | "cancelled" | "completed";
 
 export interface BookingUserSummary {
@@ -18,6 +20,7 @@ export interface Booking {
   client_id: string;
   provider_id: string;
   order_id: string | null;
+  order_status: OrderStatus | null;
   amount: number;
   fee: number;
   scheduled_at: string;

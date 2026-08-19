@@ -34,6 +34,7 @@ export default function ServiceDetailPage() {
   const [showBooking, setShowBooking] = useState(false);
   const [scheduledAt, setScheduledAt] = useState("");
   const [bookingError, setBookingError] = useState<string | null>(null);
+  const [bookingSuccess, setBookingSuccess] = useState(false);
 
   const { data: service, isLoading } = useQuery({
     queryKey: ["service", id],
@@ -44,34 +45,23 @@ export default function ServiceDetailPage() {
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
-  // Book then pay — chained in one mutation
-  const { mutate: handleBookAndPay, isPending } = useMutation({
+  // Booking request
+  const { mutate: handleBookRequest, isPending } = useMutation({
     mutationFn: async () => {
       if (!isAuthenticated) {
         router.push("/login");
         return;
       }
 
-      // Step 1 — Create the booking
       const bookingResponse = await api.post("/bookings/", {
         service_id: id,
         scheduled_at: new Date(scheduledAt).toISOString(),
       });
-      const booking = bookingResponse.data;
-
-      // Step 2 — Initiate payment using the linked Order, not the Booking itself
-      const paymentResponse = await api.post("/transactions/initiate-payment", {
-        amount: booking.amount,
-        order_id: booking.order_id,
-      });
-
-      return paymentResponse.data;
+      return bookingResponse.data;
     },
     onSuccess: (data) => {
       if (!data) return;
-      localStorage.setItem("payment_reference", data.reference);
-      localStorage.setItem("payment_type", "booking");
-      window.location.href = data.payment_link;
+      setBookingSuccess(true);
     },
     onError: (error: any) => {
       setBookingError(
@@ -91,7 +81,7 @@ export default function ServiceDetailPage() {
       setBookingError("Please select a future date and time.");
       return;
     }
-    handleBookAndPay();
+    handleBookRequest();
   };
 
   const handleCloseModal = () => {
@@ -301,86 +291,115 @@ export default function ServiceDetailPage() {
       {showBooking && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-md p-8 border border-gray-100">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-xl font-black text-gray-900 tracking-tight">
-                  Book Service
+            {bookingSuccess ? (
+              <div className="text-center py-4">
+                <div className="w-14 h-14 bg-[#2D6A4F]/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <ShieldCheck className="w-7 h-7 text-[#2D6A4F]" />
+                </div>
+                <h3 className="text-xl font-black text-gray-900 tracking-tight mb-2">
+                  Booking Request Sent!
                 </h3>
-                <p className="text-xs text-gray-400 font-medium mt-0.5">
-                  Pick a date and time that works for you
+                <p className="text-sm text-gray-500 leading-relaxed mb-6">
+                  {service.owner?.name ?? "The provider"} needs to accept your
+                  request. If you don't hear back within 72 hours, the booking
+                  will be automatically cancelled.
                 </p>
+                <button
+                  onClick={() => {
+                    handleCloseModal();
+                    setBookingSuccess(false);
+                    router.push("/dashboard/bookings");
+                  }}
+                  className="w-full py-3.5 bg-[#2D6A4F] hover:bg-[#1b4332] text-white font-black rounded-2xl transition-all active:scale-[0.98]"
+                >
+                  View My Bookings
+                </button>
               </div>
-              <button
-                onClick={handleCloseModal}
-                className="w-9 h-9 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
-              >
-                <X className="w-4 h-4 text-gray-500" />
-              </button>
-            </div>
+            ) : (
+              <>
+                {/* Modal Header */}
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-xl font-black text-gray-900 tracking-tight">
+                      Book Service
+                    </h3>
+                    <p className="text-xs text-gray-400 font-medium mt-0.5">
+                      Pick a date and time that works for you
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleCloseModal}
+                    className="w-9 h-9 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
+                  >
+                    <X className="w-4 h-4 text-gray-500" />
+                  </button>
+                </div>
 
-            {/* Service Summary */}
-            <div className="flex items-center justify-between bg-[#2D6A4F]/5 border border-[#2D6A4F]/10 rounded-2xl p-4 mb-6">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-[#2D6A4F]/60 mb-0.5">
-                  Service
-                </p>
-                <p className="font-bold text-gray-900 text-sm">
-                  {service.title}
-                </p>
-              </div>
-              <p className="text-lg font-black text-[#2D6A4F] italic">
-                {formatPrice(service.price)}
-              </p>
-            </div>
+                {/* Service Summary */}
+                <div className="flex items-center justify-between bg-[#2D6A4F]/5 border border-[#2D6A4F]/10 rounded-2xl p-4 mb-6">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-[#2D6A4F]/60 mb-0.5">
+                      Service
+                    </p>
+                    <p className="font-bold text-gray-900 text-sm">
+                      {service.title}
+                    </p>
+                  </div>
+                  <p className="text-lg font-black text-[#2D6A4F] italic">
+                    {formatPrice(service.price)}
+                  </p>
+                </div>
 
-            {/* Date & Time Picker */}
-            <div className="mb-6">
-              <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
-                <Clock className="w-3.5 h-3.5" />
-                Schedule Date & Time
-              </label>
-              <input
-                type="datetime-local"
-                value={scheduledAt}
-                min={minDateTime}
-                onChange={(e) => {
-                  setScheduledAt(e.target.value);
-                  setBookingError(null);
-                }}
-                className="input w-full"
-              />
-              {bookingError && (
-                <p className="text-rose-500 text-xs font-medium mt-2">
-                  {bookingError}
-                </p>
-              )}
-            </div>
+                {/* Date & Time Picker */}
+                <div className="mb-6">
+                  <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
+                    <Clock className="w-3.5 h-3.5" />
+                    Schedule Date & Time
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={scheduledAt}
+                    min={minDateTime}
+                    onChange={(e) => {
+                      setScheduledAt(e.target.value);
+                      setBookingError(null);
+                    }}
+                    className="input w-full"
+                  />
+                  {bookingError && (
+                    <p className="text-rose-500 text-xs font-medium mt-2">
+                      {bookingError}
+                    </p>
+                  )}
+                </div>
 
-            {/* Trust note */}
-            <div className="flex items-center gap-2 text-xs text-gray-400 font-medium mb-6">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#2D6A4F]" />
-              You'll be redirected to Flutterwave to complete payment
-            </div>
+                {/* Trust note */}
+                <div className="flex items-center gap-2 text-xs text-gray-400 font-medium mb-6">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#2D6A4F]" />
+                  The provider will review and accept your request before
+                  payment
+                </div>
 
-            {/* Submit */}
-            <button
-              onClick={handleSubmit}
-              disabled={isPending}
-              className="group w-full py-4 bg-[#2D6A4F] hover:bg-[#1b4332] text-white font-black rounded-2xl shadow-lg shadow-[#2D6A4F]/20 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Preparing payment...
-                </>
-              ) : (
-                <>
-                  Confirm & Pay
-                  <ArrowUpRight className="w-4 h-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-                </>
-              )}
-            </button>
+                {/* Submit */}
+                <button
+                  onClick={handleSubmit}
+                  disabled={isPending}
+                  className="group w-full py-4 bg-[#2D6A4F] hover:bg-[#1b4332] text-white font-black rounded-2xl shadow-lg shadow-[#2D6A4F]/20 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Sending request...
+                    </>
+                  ) : (
+                    <>
+                      Send Booking Request
+                      <ArrowUpRight className="w-4 h-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                    </>
+                  )}
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
