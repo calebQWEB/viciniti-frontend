@@ -35,7 +35,7 @@ export default function ServiceCard({ service }: { service: Service }) {
         {/* Content */}
         <div className="p-4">
           <p className="text-xs text-primary-600 font-semibold uppercase tracking-wide mb-1">
-            {service.category}
+            {service.category?.name ?? "Uncategorized"}
           </p>
           <h3 className="font-bold text-gray-900 mb-1">
             {truncateText(service.title, 40)}

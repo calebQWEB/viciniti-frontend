@@ -35,7 +35,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
         {/* Content */}
         <div className="p-4">
           <p className="text-xs text-primary-600 font-semibold uppercase tracking-wide mb-1">
-            {listing.category}
+            {listing.category?.name ?? "Uncategorized"}
           </p>
           <h3 className="font-bold text-gray-900 mb-1">
             {truncateText(listing.title, 40)}

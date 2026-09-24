@@ -8,6 +8,11 @@ export interface Service {
   description: string;
   price: number;
   category_id: string;
+  category?: {
+    id: string;
+    name: string;
+    slug: string;
+  };
   location?: string;
   latitude?: number;
   longitude?: number;

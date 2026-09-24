@@ -235,7 +235,7 @@ export default function MyServicesPage() {
                         </td>
                         <td className="px-4 py-2">
                           <span className="text-[11px] text-gray-500 font-semibold">
-                            {service.category}
+                            {service.category?.name ?? "Uncategorized"}
                           </span>
                         </td>
                         <td className="px-4 py-2">
@@ -305,7 +305,7 @@ export default function MyServicesPage() {
                       <StatusPill status={service.status} />
                     </div>
                     <p className="text-[10px] text-gray-400 font-medium truncate">
-                      {service.category} ·{" "}
+                      {service.category?.name ?? "Uncategorized"} ·{" "}
                       <span className="text-[#2D6A4F] font-bold">
                         {formatPrice(service.price)}
                       </span>

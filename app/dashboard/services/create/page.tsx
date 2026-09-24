@@ -39,7 +39,9 @@ export default function CreateServicePage() {
   const { data: categories, isLoading: loadingCategories } = useQuery({
     queryKey: ["categories", "service"],
     queryFn: async () => {
-      const response = await api.get("/categories/", { params: { type: "service" } });
+      const response = await api.get("/categories/", {
+        params: { type: "service" },
+      });
       return response.data as Category[];
     },
   });
@@ -61,7 +63,7 @@ export default function CreateServicePage() {
     if (generalError) {
       errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     }
-  }, [generalError])
+  }, [generalError]);
 
   const [errors, setErrors] = useState<
     Partial<Record<keyof ServiceCreate, string>>
@@ -202,7 +204,6 @@ export default function CreateServicePage() {
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2D6A4F]/10 text-[#2D6A4F]">
               <Wrench className="h-4 w-4" />
             </span>
-
             Create Service
           </div>
 
@@ -239,13 +240,14 @@ export default function CreateServicePage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* General error */}
             {generalError && (
-              <div ref={errorRef} className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700">
+              <div
+                ref={errorRef}
+                className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700"
+              >
                 <XCircle className="mt-0.5 h-5 w-5 shrink-0" />
 
                 <div>
-                  <p className="text-sm font-bold">
-                    Unable to publish service
-                  </p>
+                  <p className="text-sm font-bold">Unable to publish service</p>
 
                   <p className="mt-1 text-xs leading-5 text-red-600">
                     {generalError}
@@ -301,10 +303,10 @@ export default function CreateServicePage() {
                     onChange={handleChange}
                     placeholder="e.g. Professional Home Cleaning"
                     className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 ${
-  errors.title
-      ? "border-red-300 ring-4 ring-red-500/5"
-      : "border-gray-200 hover:border-gray-300 focus:border-[#2D6A4F] focus:ring-4 focus:ring-[#2D6A4F]/10"
-}`}
+                      errors.title
+                        ? "border-red-300 ring-4 ring-red-500/5"
+                        : "border-gray-200 hover:border-gray-300 focus:border-[#2D6A4F] focus:ring-4 focus:ring-[#2D6A4F]/10"
+                    }`}
                   />
 
                   {errors.title ? (
@@ -344,10 +346,10 @@ export default function CreateServicePage() {
                     rows={6}
                     placeholder="Describe what you offer, what's included, your experience, availability, and anything else customers should know..."
                     className={`w-full resize-none rounded-xl border bg-white px-4 py-3 text-sm leading-6 text-gray-900 outline-none transition-all placeholder:text-gray-400 ${
-  errors.description
-      ? "border-red-300 ring-4 ring-red-500/5"
-      : "border-gray-200 hover:border-gray-300 focus:border-[#2D6A4F] focus:ring-4 focus:ring-[#2D6A4F]/10"
-}`}
+                      errors.description
+                        ? "border-red-300 ring-4 ring-red-500/5"
+                        : "border-gray-200 hover:border-gray-300 focus:border-[#2D6A4F] focus:ring-4 focus:ring-[#2D6A4F]/10"
+                    }`}
                   />
 
                   {errors.description ? (
@@ -379,8 +381,7 @@ export default function CreateServicePage() {
                     </h2>
 
                     <p className="mt-1 text-xs leading-5 text-gray-500">
-                      Help customers find your service and understand its
-                      price.
+                      Help customers find your service and understand its price.
                     </p>
                   </div>
                 </div>
@@ -399,10 +400,10 @@ export default function CreateServicePage() {
 
                   <div
                     className={`flex overflow-hidden rounded-xl border bg-white transition-all ${
-  errors.price
-      ? "border-red-300 ring-4 ring-red-500/5"
-      : "border-gray-200 focus-within:border-[#2D6A4F] focus-within:ring-4 focus-within:ring-[#2D6A4F]/10"
-}`}
+                      errors.price
+                        ? "border-red-300 ring-4 ring-red-500/5"
+                        : "border-gray-200 focus-within:border-[#2D6A4F] focus-within:ring-4 focus-within:ring-[#2D6A4F]/10"
+                    }`}
                   >
                     <span className="flex items-center border-r border-gray-200 bg-gray-50 px-4 text-sm font-bold text-gray-500">
                       ₦
@@ -446,26 +447,28 @@ export default function CreateServicePage() {
                       onChange={handleChange}
                       disabled={loadingCategories}
                       className={`w-full appearance-none rounded-xl border bg-white px-4 py-3 pr-10 text-sm text-gray-900 outline-none transition-all ${
-                      errors.category
+                        errors.category_id
                           ? "border-red-300 ring-4 ring-red-500/5"
                           : "border-gray-200 hover:border-gray-300 focus:border-[#2D6A4F] focus:ring-4 focus:ring-[#2D6A4F]/10"
-                    }`}
+                      }`}
                     >
                       <option value="">
-                        {loadingCategories ? "Loading categories..." : "Select a category"}
+                        {loadingCategories
+                          ? "Loading categories..."
+                          : "Select a category"}
                       </option>
                       {categories?.map((category) => (
-                          <option key={category.id} value={category.id}>
-                            {category.name}
-                          </option>
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
                       ))}
                     </select>
                     <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                   </div>
 
-                  {errors.category && (
+                  {errors.category_id && (
                     <p className="mt-2 text-xs font-medium text-red-500">
-                      {errors.category}
+                      {errors.category_id}
                     </p>
                   )}
                 </div>
@@ -553,9 +556,7 @@ export default function CreateServicePage() {
                 disabled={isPending}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2D6A4F] px-5 py-3.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#1b4332] hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isPending && (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                )}
+                {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
 
                 {isPending ? "Publishing..." : "Publish Service"}
               </button>
@@ -630,9 +631,9 @@ export default function CreateServicePage() {
 
                   <div className="mt-3 flex flex-wrap gap-2">
                     {selectedCategory && (
-                        <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-semibold text-gray-600">
-                      {selectedCategory.name}
-                    </span>
+                      <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-semibold text-gray-600">
+                        {selectedCategory.name}
+                      </span>
                     )}
 
                     {form.location && (
@@ -660,8 +661,7 @@ export default function CreateServicePage() {
                     </p>
 
                     <p className="mt-1 text-[11px] text-gray-400">
-                      Complete more details to make your service more
-                      appealing.
+                      Complete more details to make your service more appealing.
                     </p>
                   </div>
 
@@ -694,8 +694,8 @@ export default function CreateServicePage() {
                   />
 
                   <CompletionItem
-                      completed={!!form.category_id}
-                      label="Choose a category"
+                    completed={!!form.category_id}
+                    label="Choose a category"
                   />
 
                   <CompletionItem
@@ -718,9 +718,7 @@ export default function CreateServicePage() {
                   onClick={handleSubmit}
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2D6A4F] px-5 py-3.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#1b4332] hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {isPending && (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  )}
+                  {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
 
                   {isPending ? "Publishing..." : "Publish Service"}
                 </button>
@@ -740,12 +738,12 @@ export default function CreateServicePage() {
       </main>
 
       {showSuccess && (
-          <SuccessModal
-              title="Service Published!"
-              message="Your Service is now live and visible to buyers nearby."
-              buttonText="View My Services"
-              onClose={() => router.push("/dashboard/services")}
-          />
+        <SuccessModal
+          title="Service Published!"
+          message="Your Service is now live and visible to buyers nearby."
+          buttonText="View My Services"
+          onClose={() => router.push("/dashboard/services")}
+        />
       )}
     </div>
   );
@@ -766,18 +764,18 @@ function CompletionItem({
     <div className="flex items-center gap-2.5">
       <span
         className={`flex h-5 w-5 items-center justify-center rounded-full ${
-  completed
-      ? "bg-[#2D6A4F] text-white"
-      : "border border-gray-200 bg-white"
-}`}
+          completed
+            ? "bg-[#2D6A4F] text-white"
+            : "border border-gray-200 bg-white"
+        }`}
       >
         {completed && <Check className="h-3 w-3" />}
       </span>
 
       <span
         className={`text-xs ${
-  completed ? "font-medium text-gray-700" : "text-gray-400"
-}`}
+          completed ? "font-medium text-gray-700" : "text-gray-400"
+        }`}
       >
         {label}
       </span>

@@ -211,7 +211,7 @@ export default function ServiceDetailPage() {
             {/* Category pill */}
             <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#2D6A4F] uppercase tracking-widest mb-4 w-fit px-3 py-1.5 bg-[#2D6A4F]/8 rounded-lg">
               <Tag className="w-3.5 h-3.5" />
-              {service.category}
+              {service.category?.name ?? "Uncategorized"}
             </span>
 
             <Link
