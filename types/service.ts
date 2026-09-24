@@ -7,7 +7,7 @@ export interface Service {
   title: string;
   description: string;
   price: number;
-  category: string;
+  category_id: string;
   location?: string;
   latitude?: number;
   longitude?: number;
@@ -26,7 +26,7 @@ export interface ServiceCreate {
   title: string;
   description: string;
   price: number;
-  category: string;
+  category_id: string;
   images?: ImageObject[];
   location?: string;
   latitude?: number | null;

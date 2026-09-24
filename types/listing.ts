@@ -6,7 +6,7 @@ export interface Listing {
   title: string;
   description: string;
   price: number;
-  category: string;
+  category_id: string;
   images: ImageObject[];
   status: "active" | "sold";
   location?: string;
@@ -19,7 +19,7 @@ export interface ListingCreate {
   title: string;
   description: string;
   price: number;
-  category: string;
+  category_id: string;
   images?: ImageObject[];
   location?: string;
   latitude?: number | null;
