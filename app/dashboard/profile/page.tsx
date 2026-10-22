@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { User } from "@/types/user";
@@ -160,12 +161,27 @@ function PrimaryButton({
 
 const BIO_MAX_LENGTH = 500;
 
+const TABS: Tab[] = ["profile", "security", "payout"];
+
 export default function ProfilePage() {
+  return (
+    <Suspense fallback={null}>
+      <ProfileContent />
+    </Suspense>
+  );
+}
+
+function ProfileContent() {
   const queryClient = useQueryClient();
   const { setUser } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const searchParams = useSearchParams();
 
-  const [activeTab, setActiveTab] = useState<Tab>("profile");
+  // Links like /dashboard/profile?tab=payout open straight on that tab
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    const requested = searchParams.get("tab") as Tab | null;
+    return requested && TABS.includes(requested) ? requested : "profile";
+  });
 
   const [form, setForm] = useState({
     name: "",

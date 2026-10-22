@@ -110,4 +110,38 @@ h6 {
   .section-title {
     @apply text-3xl font-bold text-gray-900;
   }
+
+  /* Filled input with a leading icon and a label that floats up on focus or once filled.
+     Markup order matters: input, then label, then icon. The input needs placeholder=" ". */
+  .float-field {
+    @apply relative;
+  }
+  .float-field input {
+    @apply w-full h-13 rounded-2xl border-[1.5px] border-transparent bg-earth-100 text-gray-900 transition-colors duration-150;
+    padding: 1.15rem 2.75rem 0.25rem 2.625rem;
+    /* 16px on phones so iOS doesn't zoom on focus */
+    font-size: 16px;
+  }
+  @media (min-width: 640px) {
+    .float-field input {
+      font-size: 14px;
+    }
+  }
+  .float-field input:focus {
+    @apply outline-none bg-white border-primary-500;
+  }
+  .float-field label {
+    @apply absolute top-1/2 -translate-y-1/2 pointer-events-none text-[13px] text-gray-500 transition-all duration-150;
+    left: 2.625rem;
+  }
+  .float-field input:focus + label,
+  .float-field input:not(:placeholder-shown) + label {
+    @apply top-3.5 text-[10.5px] font-semibold tracking-wide text-primary-600;
+  }
+  .float-field .float-icon {
+    @apply absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none transition-colors duration-150;
+  }
+  .float-field input:focus ~ .float-icon {
+    @apply text-primary-500;
+  }
 }

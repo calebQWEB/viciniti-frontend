@@ -1,40 +1,57 @@
 "use client";
 
 import { useState } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import MainLayout from "@/components/layout/MainLayout";
 import ListingCard from "@/components/listings/ListingCard";
+import NothingNearby from "@/components/location/NothingNearby";
 import api from "@/lib/api";
-import { Listing } from "@/types/listing";
-import { Search, X, Loader2 } from "lucide-react";
-
-const CATEGORIES = [
-  "All",
-  "Electronics",
-  "Fashion",
-  "Home & Garden",
-  "Vehicles",
-  "Technology",
-  "Sports",
-  "Books",
-  "Other",
-];
+import { useLocation } from "@/hooks/useLocation";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { CategorySummary, Listing } from "@/types/listing";
+import { Search, X, Loader2, MapPin } from "lucide-react";
 
 const PAGE_SIZE = 12;
 
-export default function BrowseItemsContentPage() {
-  const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
-  const [location, setLocation] = useState("");
+export default function BrowseItemsContentPage({
+  initialCategory = "",
+  initialQuery = "",
+}: {
+  // Category slug from ?category=, e.g. when arriving from the landing page
+  initialCategory?: string;
+  // Search text from ?q=, e.g. from the landing page search bar
+  initialQuery?: string;
+}) {
+  const [search, setSearch] = useState(initialQuery);
+  // Searched on the server, once typing pauses
+  const query = useDebouncedValue(search.trim());
+  // Category slug; empty means all categories
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+  const [sort, setSort] = useState<"nearest" | "newest">("nearest");
+  const { hasLocation, isReady, nearbyParams, locationName, radiusKm, openDialog } =
+    useLocation();
 
-  const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage } =
+  const { data: categories } = useQuery({
+    queryKey: ["categories", "item"],
+    queryFn: async () => {
+      const response = await api.get("/categories/", { params: { type: "item" } });
+      return response.data as CategorySummary[];
+    },
+  });
+
+  const { data, isPending, isFetchingNextPage, fetchNextPage, hasNextPage } =
     useInfiniteQuery({
-      queryKey: ["listings", selectedCategory, location],
+      queryKey: ["listings", selectedCategory, query, nearbyParams, sort],
       queryFn: async ({ pageParam = 0 }) => {
         const params = new URLSearchParams();
-        if (selectedCategory !== "All")
-          params.append("category", selectedCategory);
-        if (location) params.append("location", location);
+        if (selectedCategory) params.append("category", selectedCategory);
+        if (query) params.append("q", query);
+        if (hasLocation) {
+          Object.entries(nearbyParams).forEach(([key, value]) =>
+            params.append(key, String(value)),
+          );
+          params.append("sort", sort);
+        }
         params.append("skip", String(pageParam));
         params.append("limit", String(PAGE_SIZE));
         const response = await api.get(`/listings?${params.toString()}`);
@@ -45,13 +62,12 @@ export default function BrowseItemsContentPage() {
         return allPages.length * PAGE_SIZE;
       },
       initialPageParam: 0,
+      enabled: isReady,
     });
 
   const allListings = data?.pages.flat() ?? [];
   const filteredListings = allListings.filter(
-    (listing) =>
-      listing.title.toLowerCase().includes(search.toLowerCase()) &&
-      listing.status === "active",
+    (listing) => listing.status === "active",
   );
 
   return (
@@ -65,6 +81,25 @@ export default function BrowseItemsContentPage() {
           <p className="mt-1 text-xs sm:text-sm text-gray-500">
             Find great deals on items near you
           </p>
+          {isReady && (
+            <p className="mt-2 flex items-center gap-1.5 text-xs sm:text-sm text-gray-600">
+              <MapPin className="w-3.5 h-3.5 text-primary-600 shrink-0" />
+              {hasLocation ? (
+                <span>
+                  Within <strong>{radiusKm} km</strong> of{" "}
+                  <strong>{locationName}</strong>
+                </span>
+              ) : (
+                <span>Showing items from everywhere</span>
+              )}
+              <button
+                onClick={openDialog}
+                className="font-semibold text-primary-600 hover:underline"
+              >
+                {hasLocation ? "Change" : "Set your location"}
+              </button>
+            </p>
+          )}
         </div>
 
         {/* Search & Filter Bar */}
@@ -87,36 +122,40 @@ export default function BrowseItemsContentPage() {
               </button>
             )}
           </div>
-          <div className="relative w-full sm:w-48">
-            <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Filter by location..."
-              className="input text-xs sm:text-sm"
-            />
-          </div>
+          {hasLocation && (
+            <div className="relative w-full sm:w-48">
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as "nearest" | "newest")}
+                aria-label="Sort items"
+                className="input text-xs sm:text-sm"
+              >
+                <option value="nearest">Nearest first</option>
+                <option value="newest">Newest first</option>
+              </select>
+            </div>
+          )}
         </div>
 
         {/* Category Pills */}
         <div className="flex gap-1.5 overflow-x-auto pb-2 mb-4 sm:mb-6 scrollbar-hide">
-          {CATEGORIES.map((category) => (
+          {[{ name: "All", slug: "" }, ...(categories ?? [])].map((category) => (
             <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
+              key={category.slug || "all"}
+              onClick={() => setSelectedCategory(category.slug)}
               className={`shrink-0 px-3 sm:px-4 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${
-                selectedCategory === category
+                selectedCategory === category.slug
                   ? "bg-primary-500 text-white shadow-md"
                   : "bg-white text-gray-600 border border-earth-200 hover:border-primary-300"
               }`}
             >
-              {category}
+              {category.name}
             </button>
           ))}
         </div>
 
         {/* Results */}
-        {isLoading ? (
+        {isPending ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="card overflow-hidden animate-pulse">
@@ -161,6 +200,12 @@ export default function BrowseItemsContentPage() {
               </div>
             )}
           </>
+        ) : hasLocation && !search ? (
+          <NothingNearby
+            noun="items"
+            createHref="/dashboard/listings/create"
+            createLabel="Be the first to list something"
+          />
         ) : (
           <div className="text-center py-10 sm:py-14 lg:py-16">
             <div className="w-12 h-12 sm:w-16 sm:h-16 bg-earth-100 rounded-2xl flex items-center justify-center mx-auto mb-3">

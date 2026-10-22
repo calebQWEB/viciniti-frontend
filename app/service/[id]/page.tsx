@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 import type { Metadata } from "next";
 import ServiceDetail from "./ServiceDetail";
 
@@ -16,7 +17,7 @@ export async function generateMetadata({
       title: service.title,
       description: service.description?.slice(0, 160),
       openGraph: {
-        title: `${service.title} | Viciniti`,
+        title: `${service.title} | ${BRAND.name}`,
         description: service.description?.slice(0, 160),
         images: service.images?.[0]?.url
           ? [
@@ -33,7 +34,7 @@ export async function generateMetadata({
   } catch {
     return {
       title: "Service",
-      description: "View this service on Viciniti.",
+      description: `View this service on ${BRAND.name}.`,
     };
   }
 }

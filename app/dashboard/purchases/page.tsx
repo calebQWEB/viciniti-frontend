@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/authStore";
 import api from "@/lib/api";
@@ -171,13 +172,17 @@ function ActionCell({ order, isSale }: { order: Order; isSale: boolean }) {
   );
 }
 
-export default function MyPurchasesPage() {
+function MyPurchasesContent() {
   const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<Tab>("purchases");
+  const searchParams = useSearchParams();
+  const highlightId = searchParams.get("highlight");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
   const [searchInput, setSearchInput] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [page, setPage] = useState(1);
+  const [activeTab, setActiveTab] = useState<Tab>(
+    searchParams.get("tab") === "sales" ? "sales" : "purchases",
+  );
 
   useEffect(() => {
     const timeout = setTimeout(() => setSearchQuery(searchInput), 400);
@@ -249,6 +254,21 @@ export default function MyPurchasesPage() {
   const orders = activeData?.items;
   const totalPages = activeData?.total_pages ?? 1;
   const total = activeData?.total ?? 0;
+
+  useEffect(() => {
+    if (!highlightId || !orders) return;
+    for (const id of [
+      `order-row-${highlightId}`,
+      `order-card-${highlightId}`,
+    ]) {
+      const el = document.getElementById(id);
+      // Desktop table and mobile cards both exist in the DOM; only one is visible
+      if (el && el.offsetParent !== null) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        break;
+      }
+    }
+  }, [highlightId, orders]);
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "purchases", label: "Purchases" },
@@ -388,7 +408,10 @@ export default function MyPurchasesPage() {
                       return (
                         <tr
                           key={order.id}
-                          className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors"
+                          id={`order-row-${order.id}`}
+                          className={`border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors ${
+                            order.id === highlightId ? "bg-amber-50/60" : ""
+                          }`}
                         >
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
@@ -467,7 +490,12 @@ export default function MyPurchasesPage() {
                 return (
                   <div
                     key={order.id}
-                    className="bg-white border border-gray-100 rounded-xl p-3 overflow-hidden"
+                    id={`order-card-${order.id}`}
+                    className={`border rounded-xl p-3 overflow-hidden ${
+                      order.id === highlightId
+                        ? "bg-amber-50/60 border-amber-200"
+                        : "bg-white border-gray-100"
+                    }`}
                   >
                     <div className="flex items-start gap-3 mb-2.5">
                       <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-gray-50 ring-1 ring-gray-100 shrink-0">
@@ -560,5 +588,13 @@ export default function MyPurchasesPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function MyPurchasesPage() {
+  return (
+    <Suspense fallback={null}>
+      <MyPurchasesContent />
+    </Suspense>
   );
 }

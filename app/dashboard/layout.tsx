@@ -1,7 +1,10 @@
 "use client";
 
+import { BRAND } from "@/lib/brand";
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import api from "@/lib/api";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { getInitials } from "@/lib/utils";
@@ -23,7 +26,20 @@ import {
   ChevronLeft,
 } from "lucide-react";
 
-const sidebarLinks = [
+type BadgeKey =
+  | "purchases"
+  | "bookings"
+  | "messages"
+  | "notifications"
+  | "profile";
+type BadgeCounts = Record<BadgeKey, number>;
+
+const sidebarLinks: {
+  href: string;
+  icon: React.ReactNode;
+  label: string;
+  badge?: BadgeKey;
+}[] = [
   {
     href: "/dashboard",
     icon: <LayoutDashboard className="h-5 w-5" />,
@@ -43,21 +59,25 @@ const sidebarLinks = [
     href: "/dashboard/purchases",
     icon: <PackageOpen className="h-5 w-5" />,
     label: "My Purchases",
+    badge: "purchases",
   },
   {
     href: "/dashboard/bookings",
     icon: <CalendarCheck className="h-5 w-5" />,
     label: "My Bookings",
+    badge: "bookings",
   },
   {
     href: "/dashboard/messages",
     icon: <MessageSquare className="h-5 w-5" />,
     label: "Messages",
+    badge: "messages",
   },
   {
     href: "/dashboard/notifications",
     icon: <Bell className="h-5 w-5" />,
     label: "Notifications",
+    badge: "notifications",
   },
   {
     href: "/dashboard/payments",
@@ -68,10 +88,11 @@ const sidebarLinks = [
     href: "/dashboard/profile",
     icon: <User className="h-5 w-5" />,
     label: "Profile",
+    badge: "profile",
   },
 ];
 
-const SIDEBAR_STORAGE_KEY = "viciniti:sidebar-expanded";
+const SIDEBAR_STORAGE_KEY = "junction:sidebar-expanded";
 
 export default function DashboardLayout({
   children,
@@ -103,6 +124,16 @@ export default function DashboardLayout({
       window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(isExpanded));
     }
   }, [isExpanded]);
+
+  const { data: badgeCounts } = useQuery({
+    queryKey: ["badge-counts"],
+    queryFn: async () => {
+      const response = await api.get("/dashboard/badge-counts");
+      return response.data as BadgeCounts;
+    },
+    enabled: isAuthenticated,
+    refetchInterval: 60_000,
+  });
 
   if (isLoading) {
     return (
@@ -137,9 +168,9 @@ export default function DashboardLayout({
           </button>
           <Link href="/" className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary-600">
-              <span className="text-sm font-black text-white">V</span>
+              <span className="text-sm font-black text-white">{BRAND.initial}</span>
             </div>
-            <span className="text-lg font-bold text-gray-900">Viciniti</span>
+            <span className="text-lg font-bold text-gray-900">{BRAND.name}</span>
           </Link>
           <div className="w-9" />
         </header>
@@ -171,11 +202,11 @@ export default function DashboardLayout({
           >
             <Link href="/" className="flex items-center gap-2">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary-600">
-                <span className="text-sm font-black text-white">V</span>
+                <span className="text-sm font-black text-white">{BRAND.initial}</span>
               </div>
               {isExpanded && (
                 <span className="whitespace-nowrap text-lg font-bold text-gray-900">
-                  Viciniti
+                  {BRAND.name}
                 </span>
               )}
             </Link>
@@ -274,6 +305,8 @@ export default function DashboardLayout({
           <nav className="flex-1 space-y-1 overflow-y-auto overflow-x-hidden p-4">
             {sidebarLinks.map((link) => {
               const isActive = pathname === link.href;
+              const count = link.badge ? (badgeCounts?.[link.badge] ?? 0) : 0;
+              const isDot = link.badge === "profile";
               return (
                 <Link
                   key={link.href}
@@ -299,6 +332,27 @@ export default function DashboardLayout({
                       {link.label}
                     </span>
                   )}
+
+                  {count > 0 &&
+                    (isDot ? (
+                      <span
+                        className={`h-2 w-2 rounded-full bg-red-500 ${
+                          isExpanded
+                            ? "ml-auto"
+                            : "absolute right-0.5 top-0.5 ring-2 ring-white"
+                        }`}
+                      />
+                    ) : (
+                      <span
+                        className={`flex items-center justify-center rounded-full bg-primary-600 font-bold text-white ${
+                          isExpanded
+                            ? "ml-auto min-w-[20px] px-1.5 py-0.5 text-[10px]"
+                            : "absolute -right-1 -top-1 h-4 min-w-[16px] px-1 text-[9px] ring-2 ring-white"
+                        }`}
+                      >
+                        {count > 99 ? "99+" : count}
+                      </span>
+                    ))}
                 </Link>
               );
             })}

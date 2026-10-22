@@ -1,5 +1,6 @@
 "use client";
 
+import { BRAND } from "@/lib/brand";
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -7,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { getInitials } from "@/lib/utils";
+import LocationChip from "@/components/location/LocationChip";
 import { Bell, MessageSquare, LogOut, Menu, X } from "lucide-react";
 
 function UnreadBadge({ count }: { count: number }) {
@@ -53,10 +55,10 @@ export default function Navbar() {
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2 group">
               <div className="w-7 h-7 bg-primary-600 rounded-xl flex items-center justify-center shadow-md shadow-primary-500/20 group-hover:rotate-6 transition-transform">
-                <span className="text-white font-black text-sm">V</span>
+                <span className="text-white font-black text-sm">{BRAND.initial}</span>
               </div>
               <span className="text-lg font-bold font-heading text-gray-900 tracking-tight">
-                Viciniti
+                {BRAND.name}
               </span>
             </Link>
 
@@ -78,6 +80,8 @@ export default function Navbar() {
 
           {/* Right Side */}
           <div className="flex items-center space-x-1.5 sm:space-x-4">
+            <LocationChip />
+
             {isAuthenticated && user ? (
               <>
                 {/* Icons */}
@@ -144,7 +148,7 @@ export default function Navbar() {
                   href="/signup"
                   className="btn-primary py-2 px-4 text-xs font-bold shadow-md shadow-primary-500/10"
                 >
-                  Join Viciniti
+                  Join {BRAND.name}
                 </Link>
               </div>
             )}
@@ -196,7 +200,7 @@ export default function Navbar() {
                 href="/signup"
                 className="w-full btn-primary py-2.5 text-center font-bold text-sm"
               >
-                Join Viciniti
+                Join {BRAND.name}
               </Link>
             </div>
           ) : (

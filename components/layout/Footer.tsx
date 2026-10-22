@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 import Link from "next/link";
 import {
   Facebook,
@@ -8,6 +9,15 @@ import {
   ArrowRight,
 } from "lucide-react";
 
+// Fill in an href to show that icon; empty ones are hidden until the accounts exist
+const SOCIAL_LINKS = [
+  { label: "Instagram", icon: <Instagram className="w-4 h-4" />, href: "" },
+  { label: "X (Twitter)", icon: <Twitter className="w-4 h-4" />, href: "" },
+  { label: "Facebook", icon: <Facebook className="w-4 h-4" />, href: "" },
+  { label: "LinkedIn", icon: <Linkedin className="w-4 h-4" />, href: "" },
+];
+const activeSocialLinks = SOCIAL_LINKS.filter((social) => social.href);
+
 export default function Footer() {
   return (
     <footer className="bg-white border-t border-earth-100 mt-auto">
@@ -17,32 +27,30 @@ export default function Footer() {
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center space-x-2 mb-4">
               <div className="w-7 h-7 bg-primary-600 rounded-lg flex items-center justify-center shadow-md">
-                <span className="text-white font-black text-xs">V</span>
+                <span className="text-white font-black text-xs">{BRAND.initial}</span>
               </div>
               <span className="text-base font-bold font-heading text-gray-900 tracking-tight">
-                Viciniti
+                {BRAND.name}
               </span>
             </Link>
             <p className="text-gray-500 text-sm leading-relaxed max-w-sm">
               Empowering local economies by connecting neighbors for trade and
               professional services. Your community, simplified.
             </p>
-            <div className="flex space-x-3 mt-5">
-              {[
-                { icon: <Instagram className="w-4 h-4" />, href: "#" },
-                { icon: <Twitter className="w-4 h-4" />, href: "#" },
-                { icon: <Facebook className="w-4 h-4" />, href: "#" },
-                { icon: <Linkedin className="w-4 h-4" />, href: "#" },
-              ].map((social, i) => (
-                <a
-                  key={i}
-                  href={social.href}
-                  className="w-8 h-8 rounded-full bg-earth-50 flex items-center justify-center text-gray-400 hover:bg-primary-500 hover:text-white transition-all duration-300"
-                >
-                  {social.icon}
-                </a>
-              ))}
-            </div>
+            {activeSocialLinks.length > 0 && (
+              <div className="flex space-x-3 mt-5">
+                {activeSocialLinks.map((social) => (
+                  <a
+                    key={social.label}
+                    href={social.href}
+                    aria-label={social.label}
+                    className="w-8 h-8 rounded-full bg-earth-50 flex items-center justify-center text-gray-400 hover:bg-primary-500 hover:text-white transition-all duration-300"
+                  >
+                    {social.icon}
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Marketplace Links */}
@@ -121,7 +129,7 @@ export default function Footer() {
         <div className="mt-10 pt-6 border-t border-earth-100 flex flex-col md:flex-row justify-between items-center gap-3">
           <div className="flex items-center gap-4">
             <p className="text-gray-400 text-xs">
-              © {new Date().getFullYear()} Viciniti Inc.
+              © {new Date().getFullYear()} {BRAND.legalName}
             </p>
             <Link
               href="/privacy"
@@ -138,7 +146,7 @@ export default function Footer() {
           </div>
           <div className="flex items-center text-gray-400 text-xs italic">
             <Mail className="w-3.5 h-3.5 mr-1.5" />
-            hello@viciniti.local
+            {BRAND.contactEmail}
           </div>
         </div>
       </div>

@@ -20,6 +20,8 @@ export interface Service {
   status: ServiceStatus;
   user_id: string;
   created_at: string;
+  // Only present when the request included a location
+  distance_km?: number | null;
   owner?: {
     id: string;
     name: string;

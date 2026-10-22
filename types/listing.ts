@@ -14,6 +14,8 @@ export interface Listing {
   latitude?: number | null;
   longitude?: number | null;
   created_at: string;
+  // Only present when the request included a location
+  distance_km?: number | null;
 }
 
 export interface ListingCreate {

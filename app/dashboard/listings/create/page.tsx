@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import SuccessModal from "@/components/shared/SuccessModal";
+import PayoutAccountHint from "@/components/shared/PayoutAccountHint";
+import { useHasPayoutAccount } from "@/hooks/usePayoutAccount";
 import {
   ArrowLeft,
   Check,
@@ -32,6 +34,7 @@ interface Category {
 
 export default function CreateListingPage() {
   const router = useRouter();
+  const { hasPayoutAccount } = useHasPayoutAccount();
 
   const { data: categories, isLoading: loadingCategories } = useQuery({
     queryKey: ["categories", "item"],
@@ -236,6 +239,8 @@ export default function CreateListingPage() {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
           {/* FORM */}
           <form onSubmit={handleSubmit} className="space-y-6">
+            <PayoutAccountHint />
+
             {/* General error */}
             {generalError && (
               <div ref={errorRef} className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700">
@@ -740,7 +745,11 @@ export default function CreateListingPage() {
       {showSuccess && (
           <SuccessModal
               title="Listing Published!"
-              message="Your listing is now live and visible to buyers nearby."
+              message={
+                hasPayoutAccount
+                  ? "Your listing is now live and visible to buyers nearby."
+                  : "Your listing is now live. Add a payout account from your profile so you get paid when it sells."
+              }
               buttonText="View My Listings"
               onClose={() => router.push("/dashboard/listings")}
           />

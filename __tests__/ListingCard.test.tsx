@@ -27,7 +27,8 @@ const mockListing: Listing = {
   title: "iPhone 13 Pro",
   description: "Brand new phone",
   price: 500000,
-  category: "Electronics",
+  category_id: "cat-1",
+  category: { id: "cat-1", name: "Electronics", slug: "electronics" },
   images: [
     { url: "https://res.cloudinary.com/test.jpg", public_id: "test/123" },
   ],
@@ -52,9 +53,24 @@ describe("ListingCard", () => {
     expect(screen.getByText("Electronics")).toBeInTheDocument();
   });
 
+  it("falls back to Uncategorized without a category", () => {
+    render(<ListingCard listing={{ ...mockListing, category: undefined }} />);
+    expect(screen.getByText("Uncategorized")).toBeInTheDocument();
+  });
+
   it("renders listing location", () => {
     render(<ListingCard listing={mockListing} />);
     expect(screen.getByText("Lagos")).toBeInTheDocument();
+  });
+
+  it("shows distance when the result came from a nearby search", () => {
+    render(<ListingCard listing={{ ...mockListing, distance_km: 1.5 }} />);
+    expect(screen.getByText("1.5 km away")).toBeInTheDocument();
+  });
+
+  it("shows no distance without a location", () => {
+    render(<ListingCard listing={mockListing} />);
+    expect(screen.queryByText(/away/)).not.toBeInTheDocument();
   });
 
   it("renders listing image", () => {

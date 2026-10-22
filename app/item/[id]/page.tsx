@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 import type { Metadata } from "next";
 import ItemDetail from "./ItemDetail";
 
@@ -18,7 +19,7 @@ export async function generateMetadata({
       title: listing.title,
       description: listing.description?.slice(0, 160),
       openGraph: {
-        title: `${listing.title} | Viciniti`,
+        title: `${listing.title} | ${BRAND.name}`,
         description: listing.description?.slice(0, 160),
         images: listing.images?.[0]?.url
           ? [
@@ -35,7 +36,7 @@ export async function generateMetadata({
   } catch {
     return {
       title: "Item Listing",
-      description: "View this item for sale on Viciniti.",
+      description: `View this item for sale on ${BRAND.name}.`,
     };
   }
 }

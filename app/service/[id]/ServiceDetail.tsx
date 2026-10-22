@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import Image from "next/image";
 import MainLayout from "@/components/layout/MainLayout";
+import DistanceFromYou from "@/components/location/DistanceFromYou";
 import api from "@/lib/api";
 import { Service } from "@/types/service";
 import { formatPrice } from "@/lib/utils";
@@ -239,6 +240,7 @@ export default function ServiceDetailPage() {
               <div className="flex items-center gap-2 text-gray-400 text-sm font-medium mb-6">
                 <MapPin className="w-4 h-4 text-[#2D6A4F]/60" />
                 {service.location}
+                <DistanceFromYou latitude={service.latitude} longitude={service.longitude} />
               </div>
             )}
 

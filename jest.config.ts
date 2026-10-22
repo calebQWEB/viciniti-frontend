@@ -16,7 +16,7 @@ const config: Config = {
       },
     ],
   },
-  testMatch: ["**/__tests__/**/*.test.tsx"],
+  testMatch: ["**/__tests__/**/*.test.{ts,tsx}"],
 };
 
 export default config;

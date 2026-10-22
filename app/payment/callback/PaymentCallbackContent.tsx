@@ -20,6 +20,8 @@ export default function PaymentCallbackPage() {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<CallbackStatus>("verifying");
   const [errorMessage, setErrorMessage] = useState("");
+  // Paid after the order expired: money was taken and will be refunded
+  const [needsRefund, setNeedsRefund] = useState(false);
 
   useEffect(() => {
     const verify = async () => {
@@ -60,6 +62,14 @@ export default function PaymentCallbackPage() {
         if (response.data.status === "success") {
           setStatus("success");
           // Clean up localStorage
+          localStorage.removeItem("payment_reference");
+          localStorage.removeItem("payment_order_id");
+          localStorage.removeItem("payment_type");
+        } else if (response.data.status === "needs_refund") {
+          // Paid after the order expired: the backend explains the refund
+          setStatus("failed");
+          setNeedsRefund(true);
+          setErrorMessage(response.data.message);
           localStorage.removeItem("payment_reference");
           localStorage.removeItem("payment_order_id");
           localStorage.removeItem("payment_type");
@@ -150,18 +160,22 @@ export default function PaymentCallbackPage() {
           </div>
 
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-50 text-rose-500 text-[10px] font-bold uppercase tracking-widest mb-4">
-            Payment Failed
+            {needsRefund ? "Order Expired" : "Payment Failed"}
           </div>
 
           <h2 className="text-2xl font-black text-gray-900 tracking-tight mb-2">
-            Something went wrong
+            {needsRefund ? "We'll refund your payment" : "Something went wrong"}
           </h2>
           <p className="text-gray-400 font-medium text-sm mb-2">
             {errorMessage}
           </p>
-          <p className="text-gray-300 text-xs mb-8">
-            No charges have been made to your account.
-          </p>
+          {/* A late payment was charged, so this reassurance only applies to real failures */}
+          {!needsRefund && (
+            <p className="text-gray-300 text-xs mb-8">
+              No charges have been made to your account.
+            </p>
+          )}
+          {needsRefund && <div className="mb-8" />}
 
           {/* Actions */}
           <div className="flex flex-col gap-3">

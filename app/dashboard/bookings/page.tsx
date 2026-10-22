@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { Booking, BookingStatus } from "@/types/booking";
@@ -139,9 +140,13 @@ function ActionCell({
   return null;
 }
 
-export default function MyBookingsPage() {
+function MyBookingsContent() {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<Tab>("my-bookings");
+  const searchParams = useSearchParams();
+  const highlightId = searchParams.get("highlight");
+  const [activeTab, setActiveTab] = useState<Tab>(
+    searchParams.get("tab") === "requests" ? "my-requests" : "my-bookings",
+  );
   const [statusFilter, setStatusFilter] = useState<FilterStatus>("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
@@ -214,6 +219,21 @@ export default function MyBookingsPage() {
     if (statusFilter === "all") return allBookings;
     return allBookings?.filter((b) => b.status === statusFilter);
   }, [allBookings, statusFilter]);
+
+  useEffect(() => {
+    if (!highlightId || !bookings) return;
+    for (const id of [
+      `booking-row-${highlightId}`,
+      `booking-card-${highlightId}`,
+    ]) {
+      const el = document.getElementById(id);
+      // Desktop table and mobile cards both exist in the DOM; only one is visible
+      if (el && el.offsetParent !== null) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        break;
+      }
+    }
+  }, [highlightId, bookings]);
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "my-bookings", label: "My Bookings" },
@@ -349,7 +369,10 @@ export default function MyBookingsPage() {
                       return (
                         <tr
                           key={booking.id}
-                          className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors"
+                          id={`booking-row-${booking.id}`}
+                          className={`border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors ${
+                            booking.id === highlightId ? "bg-amber-50/60" : ""
+                          }`}
                         >
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
@@ -454,7 +477,12 @@ export default function MyBookingsPage() {
                 return (
                   <div
                     key={booking.id}
-                    className="bg-white border border-gray-100 rounded-xl p-3 overflow-hidden"
+                    id={`booking-card-${booking.id}`}
+                    className={`border rounded-xl p-3 overflow-hidden ${
+                      booking.id === highlightId
+                        ? "bg-amber-50/60 border-amber-200"
+                        : "bg-white border-gray-100"
+                    }`}
                   >
                     <div className="flex items-start gap-3 mb-2.5">
                       <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-gray-50 ring-1 ring-gray-100 shrink-0">
@@ -545,5 +573,13 @@ export default function MyBookingsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function MyBookingsPage() {
+  return (
+    <Suspense fallback={null}>
+      <MyBookingsContent />
+    </Suspense>
   );
 }

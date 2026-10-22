@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
@@ -11,11 +12,11 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   title: {
-    default: "Viciniti — Local Community Marketplace",
-    template: "%s | Viciniti",
+    default: `${BRAND.name} — ${BRAND.tagline}`,
+    template: `%s | ${BRAND.name}`,
   },
   description:
-    "Buy and sell items, hire and offer local services in your community. Viciniti connects people near you.",
+    `Buy and sell items, hire and offer local services in your community. ${BRAND.name} connects people near you.`,
   keywords: [
     "marketplace",
     "local services",
@@ -24,15 +25,15 @@ export const metadata: Metadata = {
     "Lagos",
     "community marketplace",
   ],
-  authors: [{ name: "Viciniti" }],
-  creator: "Viciniti",
+  authors: [{ name: BRAND.name }],
+  creator: BRAND.name,
   metadataBase: new URL("https://viciniti-frontend.vercel.app"),
   openGraph: {
     type: "website",
     locale: "en_NG",
     url: "https://viciniti-frontend.vercel.app",
-    siteName: "Viciniti",
-    title: "Viciniti — Local Community Marketplace",
+    siteName: BRAND.name,
+    title: `${BRAND.name} — ${BRAND.tagline}`,
     description:
       "Buy and sell items, hire and offer local services in your community.",
     images: [
@@ -40,13 +41,13 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Viciniti — Local Community Marketplace",
+        alt: `${BRAND.name} — ${BRAND.tagline}`,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Viciniti — Local Community Marketplace",
+    title: `${BRAND.name} — ${BRAND.tagline}`,
     description:
       "Buy and sell items, hire and offer local services in your community.",
     images: ["/og-image.png"],

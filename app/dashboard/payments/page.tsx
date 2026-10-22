@@ -1,5 +1,6 @@
 "use client";
 
+import { BRAND } from "@/lib/brand";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
@@ -260,7 +261,7 @@ export default function PaymentsPage() {
             Payments & Earnings
           </h1>
           <p className="text-gray-500 text-xs sm:text-sm font-medium">
-            A full overview of your financial activity on Viciniti.
+            A full overview of your financial activity on {BRAND.name}.
           </p>
         </div>
 

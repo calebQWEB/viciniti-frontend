@@ -1,31 +1,23 @@
 "use client";
 
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { Calendar, Check, MapPin, MessageSquare, Share2, ShieldCheck, Star } from "lucide-react";
 import MainLayout from "@/components/layout/MainLayout";
 import ListingCard from "@/components/listings/ListingCard";
 import ServiceCard from "@/components/services/ServiceCard";
+import StreetPattern from "@/components/location/StreetPattern";
 import api from "@/lib/api";
-import { User } from "@/types/user";
-import { Listing } from "@/types/listing";
-import { Service } from "@/types/service";
-import { Review } from "@/types/review";
+import { BRAND } from "@/lib/brand";
 import { getInitials } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
-import {
-  MapPin,
-  Calendar,
-  MessageSquare,
-  ShoppingBag,
-  Wrench,
-  BadgeCheck,
-  ArrowUpRight,
-  Wallet,
-  Star,
-} from "lucide-react";
+import { PublicUser } from "@/types/user";
+import { Listing } from "@/types/listing";
+import { Service } from "@/types/service";
+import { PublicReview } from "@/types/review";
 
 interface UserStats {
   listings: Listing[];
@@ -35,507 +27,338 @@ interface UserStats {
 
 type Tab = "listings" | "services" | "reviews";
 
+const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
+
+function Stars({ rating, size = "h-3.5 w-3.5" }: { rating: number; size?: string }) {
+  return (
+    <span className="inline-flex gap-0.5" aria-label={`${rating} out of 5`}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Star
+          key={n}
+          aria-hidden="true"
+          className={`${size} ${n <= Math.round(rating) ? "fill-amber-400 text-amber-400" : "fill-earth-200 text-earth-200"}`}
+        />
+      ))}
+    </span>
+  );
+}
+
+// Uses the phone's share sheet where available, otherwise copies the link
+function ShareButton({ name }: { name: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const share = async () => {
+    const url = window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: `${name} on ${BRAND.name}`, url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Share sheet dismissed or clipboard blocked: nothing to do
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={share}
+      aria-label={copied ? "Link copied" : "Share profile"}
+      className="inline-flex items-center gap-1.5 rounded-xl border border-earth-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-earth-50 transition-colors"
+    >
+      {copied ? <Check className="h-3.5 w-3.5 text-primary-500" /> : <Share2 className="h-3.5 w-3.5" />}
+      {copied && "Link copied"}
+    </button>
+  );
+}
+
+function ReviewsTab({ reviews, averageRating }: { reviews: PublicReview[]; averageRating: number }) {
+  if (reviews.length === 0) {
+    return <p className="py-10 text-center text-[13px] text-gray-500">No reviews yet.</p>;
+  }
+
+  return (
+    <div className="max-w-2xl">
+      <div className="grid max-w-xl grid-cols-1 items-center gap-4 border-b border-earth-200 pb-5 sm:grid-cols-[auto_1fr] sm:gap-6">
+        <div>
+          <p className="text-[28px] font-extrabold leading-none tracking-tight text-gray-900 tabular-nums">
+            {averageRating.toFixed(1)}
+          </p>
+          <div className="mt-1.5">
+            <Stars rating={averageRating} />
+          </div>
+          <p className="mt-1 text-xs text-gray-500">{plural(reviews.length, "review")}</p>
+        </div>
+        <div className="space-y-1">
+          {[5, 4, 3, 2, 1].map((stars) => {
+            const count = reviews.filter((r) => r.rating === stars).length;
+            return (
+              <div key={stars} className="grid grid-cols-[12px_1fr_20px] items-center gap-2 text-[11px] text-gray-500 tabular-nums">
+                <span>{stars}</span>
+                <span className="h-1.5 overflow-hidden rounded-full bg-earth-100">
+                  <span
+                    className="block h-full rounded-full bg-amber-400"
+                    style={{ width: `${(count / reviews.length) * 100}%` }}
+                  />
+                </span>
+                <span className="text-right">{count}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <ul>
+        {reviews.map((review) => (
+          <li key={review.id} className="grid grid-cols-[32px_1fr] gap-3 border-b border-earth-100 py-4">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-earth-100 text-[11px] font-bold text-gray-500">
+              {getInitials(review.reviewer_name)}
+            </span>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px]">
+                <span className="font-bold text-gray-900">{review.reviewer_name}</span>
+                <span className="text-gray-500">
+                  {review.kind} <span className="font-semibold text-gray-800">{review.subject_title}</span>
+                </span>
+                <Stars rating={review.rating} size="h-3 w-3" />
+                <time className="w-full text-[11.5px] text-gray-400 sm:ml-auto sm:w-auto" dateTime={review.created_at}>
+                  {new Date(review.created_at).toLocaleDateString("en-NG", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </time>
+              </div>
+              {review.review_text && (
+                <p className="mt-1.5 text-[13px] leading-relaxed text-gray-700">{review.review_text}</p>
+              )}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export default function PublicProfilePage() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const { user: currentUser, isAuthenticated } = useAuthStore();
   const [activeTab, setActiveTab] = useState<Tab>("listings");
 
-  // Fetch user profile
-  const { data: user, isLoading: loadingUser } = useQuery({
+  const { data: user, isLoading: loadingUser, isError } = useQuery({
     queryKey: ["public-profile", id],
     queryFn: async () => {
       const response = await api.get(`/users/${id}`);
-      return response.data as User;
+      return response.data as PublicUser;
     },
     staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 
-  // Fetch user stats
-  const { data: stats, isLoading: loadingStats } = useQuery({
+  const { data: stats } = useQuery({
     queryKey: ["user-stats", id],
     queryFn: async () => {
       const response = await api.get(`/users/${id}/stats`);
       return response.data as UserStats;
     },
     staleTime: 5 * 60 * 1000,
+    enabled: !!user,
   });
 
-  // Fetch reviews
-  const { data: reviews, isLoading: loadingReviews } = useQuery({
+  const { data: reviews = [] } = useQuery({
     queryKey: ["seller-reviews", id],
     queryFn: async () => {
       const response = await api.get(`/users/${id}/reviews`);
-      return response.data as Review[];
+      return response.data as PublicReview[];
     },
     staleTime: 5 * 60 * 1000,
+    enabled: !!user,
   });
 
-  const isLoading = loadingUser || loadingStats || loadingReviews;
-  const isOwnProfile = currentUser?.id === id;
-
-  // Average rating
-  const averageRating =
-    reviews && reviews.length > 0
-      ? (
-          reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-        ).toFixed(1)
-      : null;
-
-  const tabs = [
-    {
-      key: "listings",
-      label: "Listings",
-      count: stats?.listings.length ?? 0,
-      icon: <ShoppingBag className="w-4 h-4" />,
-    },
-    {
-      key: "services",
-      label: "Services",
-      count: stats?.services.length ?? 0,
-      icon: <Wrench className="w-4 h-4" />,
-    },
-    {
-      key: "reviews",
-      label: "Reviews",
-      count: reviews?.length ?? 0,
-      icon: <Star className="w-4 h-4" />,
-    },
-  ];
-
-  if (isLoading) {
+  if (loadingUser) {
     return (
       <MainLayout>
-        <div className="max-w-4xl mx-auto px-3 sm:px-4 lg:px-6 py-6 animate-pulse">
-          <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm mb-6">
-            <div className="h-20 sm:h-28 bg-gray-50" />
-            <div className="px-5 sm:px-7 pb-6">
-              <div className="-mt-8 sm:-mt-10 flex items-end gap-4">
-                <div className="w-24 h-24 rounded-full bg-gray-200 ring-4 ring-white" />
-                <div className="pb-2 space-y-2 flex-1">
-                  <div className="h-5 bg-gray-100 rounded-full w-1/4" />
-                  <div className="h-3.5 bg-gray-100 rounded-full w-1/3" />
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white border border-gray-100 rounded-2xl h-24 mb-6" />
-          <div className="h-10 bg-gray-100 rounded-full w-1/2 mb-6" />
+        <div className="h-24 bg-primary-700 sm:h-28" />
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 animate-pulse">
+          <div className="-mt-11 h-[92px] w-[92px] rounded-full border-4 border-earth-50 bg-earth-200" />
+          <div className="mt-4 h-5 w-48 rounded-full bg-earth-200" />
+          <div className="mt-3 h-3.5 w-72 rounded-full bg-earth-100" />
         </div>
       </MainLayout>
     );
   }
 
-  if (!user) return null;
+  if (isError || !user) {
+    return (
+      <MainLayout>
+        <div className="mx-auto max-w-md px-4 py-20 text-center">
+          <h1 className="text-lg font-bold text-gray-900">This profile doesn&apos;t exist</h1>
+          <p className="mt-1.5 text-[13px] text-gray-500">The link may be wrong, or the account was removed.</p>
+          <Link href="/" className="mt-5 inline-block text-[13px] font-bold text-primary-600 hover:underline">
+            Back to {BRAND.name}
+          </Link>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  const firstName = user.name.split(" ")[0];
+  const isOwnProfile = currentUser?.id === id;
+  const listings = stats?.listings ?? [];
+  const services = stats?.services ?? [];
+  const averageRating = reviews.length
+    ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+    : 0;
+
+  const tabs: { key: Tab; label: string; count: number }[] = [
+    { key: "listings", label: "Listings", count: listings.length },
+    { key: "services", label: "Services", count: services.length },
+    { key: "reviews", label: "Reviews", count: reviews.length },
+  ];
 
   return (
     <MainLayout>
-      <div className="min-h-screen">
-        <div className="max-w-5xl mx-auto px-3 sm:px-4 lg:px-6 py-6 lg:py-8">
-          <div className="relative overflow-hidden rounded-4xl border border-[#2D6A4F]/10 bg-white shadow-[0_20px_80px_-24px_rgba(45,106,79,0.28)] mb-6">
-            <div className="absolute inset-x-0 top-0 h-28" />
-            <div className="absolute -right-8 top-8 h-28 w-28 rounded-full bg-white/20 blur-3xl" />
-            <div className="absolute left-10 top-10 h-16 w-16 rounded-full border border-white/20" />
+      {/* Band: only the avatar overlaps it, so the name sits on the light background */}
+      <div className="relative h-24 overflow-hidden bg-primary-700 sm:h-28" aria-hidden="true">
+        <StreetPattern roads />
+      </div>
 
-            <div className="relative px-5 sm:px-7 pb-6 pt-6 sm:pt-8">
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                <div className="flex items-start gap-4">
-                  <div className="relative shrink-0">
-                    <div className="absolute inset-0 rounded-full blur-xl opacity-40 scale-110" />
-                    <div className="relative w-24 h-24 rounded-full ring-4 ring-white overflow-hidden bg-[#2D6A4F]/10 shadow-sm">
-                      {user.avatar ? (
-                        <Image
-                          src={user.avatar}
-                          alt={user.name}
-                          width={96}
-                          height={96}
-                          className="object-cover w-full h-full"
-                        />
-                      ) : (
-                        <span className="text-2xl font-black text-[#2D6A4F]">
-                          {getInitials(user.name)}
-                        </span>
-                      )}
-                    </div>
-                    <div className="absolute bottom-0.5 right-0.5 w-6 h-6 bg-[#2D6A4F] rounded-full ring-2 ring-white flex items-center justify-center">
-                      <BadgeCheck className="w-3.5 h-3.5 text-white" />
-                    </div>
-                  </div>
-
-                  <div className="pt-2 min-w-0">
-                    <div className="flex items-center gap-2.5 flex-wrap">
-                      <h1 className="text-xl font-black text-gray-900 tracking-tight">
-                        {user.name}
-                      </h1>
-                      {averageRating && (
-                        <div className="flex items-center gap-1 px-2 py-1 bg-yellow-50 border border-yellow-100 rounded-full">
-                          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                          <span className="text-xs font-bold text-yellow-700">
-                            {averageRating}
-                          </span>
-                          <span className="text-[10px] text-yellow-600">
-                            ({reviews?.length})
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3.5 mt-1.5">
-                      {user.location && (
-                        <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                          <MapPin className="w-3 h-3 text-[#2D6A4F]" />
-                          {user.location}
-                        </div>
-                      )}
-                      <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                        <Calendar className="w-3 h-3 text-[#2D6A4F]" />
-                        Member since{" "}
-                        {new Date(user.created_at).toLocaleDateString("en-NG", {
-                          month: "long",
-                          year: "numeric",
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {isOwnProfile ? (
-                    <Link
-                      href="/dashboard/profile"
-                      className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 text-gray-700 font-bold rounded-2xl text-xs transition-all border border-gray-200 shadow-sm"
-                    >
-                      Edit Profile
-                      <ArrowUpRight className="w-4 h-4" />
-                    </Link>
-                  ) : (
-                    isAuthenticated && (
-                      <Link
-                        href={`/dashboard/messages?contact=${user.id}`}
-                        className="group flex items-center justify-center gap-2 px-4 py-2.5 bg-[#2D6A4F] hover:bg-[#1b4332] text-white font-bold rounded-2xl text-xs transition-all shadow-sm shadow-[#2D6A4F]/20 active:scale-95"
-                      >
-                        <MessageSquare className="w-4 h-4" />
-                        Message
-                        <ArrowUpRight className="w-4 h-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-                      </Link>
-                    )
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-5 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-                <div className="rounded-3xl border border-gray-100 bg-[#F8FCFA] p-4 sm:p-5">
-                  <div className="text-[10px] uppercase tracking-[0.24em] text-gray-400 font-semibold mb-2">
-                    About
-                  </div>
-                  {user.bio ? (
-                    <p className="text-sm leading-6 text-gray-600">
-                      {user.bio}
-                    </p>
-                  ) : (
-                    <p className="text-sm leading-6 text-gray-500">
-                      This profile is still getting started. Check out their
-                      listings and services below.
-                    </p>
-                  )}
-                </div>
-
-                <div className="rounded-3xl border border-[#2D6A4F]/10 p-4 sm:p-5">
-                  <div className="text-[10px] uppercase tracking-[0.24em] text-gray-400 font-semibold mb-3">
-                    Highlights
-                  </div>
-                  <div className="space-y-2.5 text-sm text-gray-600">
-                    <div className="flex items-center justify-between rounded-xl bg-white/70 px-3 py-2">
-                      <span>Verified profile</span>
-                      <span className="font-semibold text-[#2D6A4F]">Yes</span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-xl bg-white/70 px-3 py-2">
-                      <span>Active listings</span>
-                      <span className="font-semibold text-[#2D6A4F]">
-                        {stats?.listings.length ?? 0}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-xl bg-white/70 px-3 py-2">
-                      <span>Services offered</span>
-                      <span className="font-semibold text-[#2D6A4F]">
-                        {stats?.services.length ?? 0}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-3 mb-6">
-            <div className="rounded-3xl border border-gray-100 bg-white p-4 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-[#2D6A4F]/10 flex items-center justify-center">
-                  <ShoppingBag className="w-5 h-5 text-[#2D6A4F]" />
-                </div>
-                <div>
-                  <p className="text-xl font-black text-gray-900 leading-none">
-                    {stats?.listings.length ?? 0}
-                  </p>
-                  <p className="text-[10px] uppercase tracking-[0.24em] text-gray-400 mt-1">
-                    Listings
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-gray-100 bg-white p-4 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-[#F4A261]/10 flex items-center justify-center">
-                  <Wrench className="w-5 h-5 text-[#F4A261]" />
-                </div>
-                <div>
-                  <p className="text-xl font-black text-gray-900 leading-none">
-                    {stats?.services.length ?? 0}
-                  </p>
-                  <p className="text-[10px] uppercase tracking-[0.24em] text-gray-400 mt-1">
-                    Services
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-gray-100 bg-white p-4 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center">
-                  <Wallet className="w-5 h-5 text-emerald-500" />
-                </div>
-                <div>
-                  <p className="text-xl font-black text-gray-900 leading-none">
-                    {stats?.completed_orders_count ?? 0}
-                  </p>
-                  <p className="text-[10px] uppercase tracking-[0.24em] text-gray-400 mt-1">
-                    Transactions
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-gray-100 bg-white p-2 shadow-sm mb-6">
-            <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {tabs.map((tab) => {
-                const isActive = activeTab === tab.key;
-                return (
-                  <button
-                    key={tab.key}
-                    onClick={() => setActiveTab(tab.key as Tab)}
-                    className={`flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-all ${
-                      isActive
-                        ? "bg-[#2D6A4F] text-white shadow-sm"
-                        : "bg-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-700"
-                    }`}
-                  >
-                    {tab.icon}
-                    <span>{tab.label}</span>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                        isActive
-                          ? "bg-white/20 text-white"
-                          : "bg-gray-100 text-gray-500"
-                      }`}
-                    >
-                      {tab.count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="rounded-[28px] border border-gray-100 bg-white/80 p-4 sm:p-5 shadow-sm">
-            {activeTab === "listings" && (
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 className="text-base font-black text-gray-900">
-                      Listings
-                    </h2>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Browse what this seller has shared.
-                    </p>
-                  </div>
-                </div>
-                {stats?.listings && stats.listings.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {stats.listings.map((listing) => (
-                      <ListingCard key={listing.id} listing={listing} />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-16 rounded-3xl border border-dashed border-gray-200 bg-[#F8FCFA]">
-                    <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
-                      <ShoppingBag className="w-6 h-6 text-gray-300" />
-                    </div>
-                    <h3 className="text-sm font-bold text-gray-900">
-                      No listings yet
-                    </h3>
-                    <p className="text-gray-400 max-w-xs mx-auto mt-1 font-medium text-xs">
-                      {user.name.split(" ")[0]} hasn&apos;t posted any listings
-                      yet.
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === "services" && (
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 className="text-base font-black text-gray-900">
-                      Services
-                    </h2>
-                    <p className="text-xs text-gray-500 mt-1">
-                      See the services this profile offers.
-                    </p>
-                  </div>
-                </div>
-                {stats?.services && stats.services.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {stats.services.map((service) => (
-                      <ServiceCard key={service.id} service={service} />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-16 rounded-3xl border border-dashed border-gray-200 bg-[#F8FCFA]">
-                    <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
-                      <Wrench className="w-6 h-6 text-gray-300" />
-                    </div>
-                    <h3 className="text-sm font-bold text-gray-900">
-                      No services yet
-                    </h3>
-                    <p className="text-gray-400 max-w-xs mx-auto mt-1 font-medium text-xs">
-                      {user.name.split(" ")[0]} hasn&apos;t offered any services
-                      yet.
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === "reviews" && (
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 className="text-base font-black text-gray-900">
-                      Reviews
-                    </h2>
-                    <p className="text-xs text-gray-500 mt-1">
-                      What others have to say.
-                    </p>
-                  </div>
-                </div>
-                {reviews && reviews.length > 0 ? (
-                  <div className="space-y-3">
-                    <div className="rounded-3xl border border-gray-100 bg-linear-to-r from-[#F8FCFA] to-white p-5 flex flex-col sm:flex-row items-start sm:items-center gap-5">
-                      <div className="text-center sm:text-left shrink-0">
-                        <p className="text-4xl font-black text-gray-900 italic tracking-tight leading-none">
-                          {averageRating}
-                        </p>
-                        <div className="flex items-center gap-0.5 justify-center sm:justify-start mt-2">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star
-                              key={star}
-                              className={`w-3.5 h-3.5 ${
-                                star <= Math.round(Number(averageRating))
-                                  ? "fill-yellow-400 text-yellow-400"
-                                  : "fill-gray-200 text-gray-200"
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <p className="text-[10px] text-gray-400 font-medium mt-1.5">
-                          {reviews.length} review
-                          {reviews.length !== 1 ? "s" : ""}
-                        </p>
-                      </div>
-                      <div className="flex-1 w-full space-y-1.5">
-                        {[5, 4, 3, 2, 1].map((star) => {
-                          const count = reviews.filter(
-                            (r) => r.rating === star,
-                          ).length;
-                          const percentage = Math.round(
-                            (count / reviews.length) * 100,
-                          );
-                          return (
-                            <div key={star} className="flex items-center gap-2">
-                              <span className="text-[10px] text-gray-400 font-medium w-3">
-                                {star}
-                              </span>
-                              <Star className="w-3 h-3 fill-yellow-400 text-yellow-400 shrink-0" />
-                              <div className="flex-1 bg-gray-200/70 rounded-full h-1.5">
-                                <div
-                                  className="bg-yellow-400 h-1.5 rounded-full transition-all"
-                                  style={{ width: `${percentage}%` }}
-                                />
-                              </div>
-                              <span className="text-[10px] text-gray-400 font-medium w-6 text-right">
-                                {count}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {reviews.map((review) => (
-                      <div
-                        key={review.id}
-                        className="bg-white border border-gray-100 rounded-[20px] p-4 hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)] transition-all"
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-1">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <Star
-                                key={star}
-                                className={`w-3.5 h-3.5 ${
-                                  star <= review.rating
-                                    ? "fill-yellow-400 text-yellow-400"
-                                    : "fill-gray-200 text-gray-200"
-                                }`}
-                              />
-                            ))}
-                          </div>
-                          <span className="text-[10px] text-gray-400 font-medium">
-                            {new Date(review.created_at).toLocaleDateString(
-                              "en-NG",
-                              {
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric",
-                              },
-                            )}
-                          </span>
-                        </div>
-                        {review.review_text && (
-                          <p className="text-xs text-gray-600 leading-relaxed">
-                            {review.review_text}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-16 rounded-3xl border border-dashed border-gray-200 bg-[#F8FCFA]">
-                    <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
-                      <Star className="w-6 h-6 text-gray-300" />
-                    </div>
-                    <h3 className="text-sm font-bold text-gray-900">
-                      No reviews yet
-                    </h3>
-                    <p className="text-gray-400 max-w-xs mx-auto mt-1 font-medium text-xs">
-                      {user.name.split(" ")[0]} hasn&apos;t received any reviews
-                      yet.
-                    </p>
-                  </div>
-                )}
-              </div>
+      <div className="max-w-5xl mx-auto px-4 pb-14 sm:px-6">
+        <header className="grid grid-cols-[auto_1fr] items-start gap-x-3 gap-y-3 sm:grid-cols-[auto_1fr_auto] sm:gap-x-5">
+          <div className="relative -mt-9 h-[72px] w-[72px] shrink-0 overflow-hidden rounded-full border-4 border-earth-50 bg-primary-100 shadow-[0_10px_24px_-14px_rgba(23,61,44,0.6)] sm:-mt-11 sm:h-[92px] sm:w-[92px]">
+            {user.avatar ? (
+              <Image src={user.avatar} alt={user.name} fill sizes="92px" className="object-cover" />
+            ) : (
+              <span className="flex h-full w-full items-center justify-center text-xl font-extrabold text-primary-700 sm:text-2xl">
+                {getInitials(user.name)}
+              </span>
             )}
           </div>
+
+          <div className="min-w-0 pt-2.5 sm:pt-3.5">
+            <h1 className="text-xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-2xl">
+              {user.name}
+            </h1>
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-[12.5px] text-gray-500">
+              {user.location && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary-50 py-0.5 pl-1.5 pr-2.5 font-semibold text-primary-700">
+                  <MapPin className="h-3 w-3" aria-hidden="true" />
+                  {user.location}
+                </span>
+              )}
+              {reviews.length > 0 && (
+                <span className="inline-flex items-center gap-1 font-semibold text-gray-900">
+                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" aria-hidden="true" />
+                  {averageRating.toFixed(1)}
+                  <span className="font-normal text-gray-500">({plural(reviews.length, "review")})</span>
+                </span>
+              )}
+              <span className="inline-flex items-center gap-1">
+                <Calendar className="h-3 w-3 text-primary-500" aria-hidden="true" />
+                Member since{" "}
+                {new Date(user.created_at).toLocaleDateString("en-NG", { month: "long", year: "numeric" })}
+              </span>
+            </div>
+          </div>
+
+          <div className="col-span-2 flex gap-2 sm:col-span-1 sm:pt-4">
+            {isOwnProfile ? (
+              <Link
+                href="/dashboard/profile"
+                className="inline-flex flex-1 items-center justify-center rounded-xl border border-earth-200 bg-white px-4 py-2 text-xs font-bold text-gray-800 hover:bg-earth-50 transition-colors sm:flex-none"
+              >
+                Edit profile
+              </Link>
+            ) : (
+              <Link
+                href={isAuthenticated ? `/dashboard/messages?contact=${user.id}` : "/login"}
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary-500 px-4 py-2 text-xs font-bold text-white hover:bg-primary-600 transition-colors sm:flex-none"
+              >
+                <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
+                {isAuthenticated ? `Message ${firstName}` : "Log in to message"}
+              </Link>
+            )}
+            <ShareButton name={user.name} />
+          </div>
+        </header>
+
+        <p className="mt-4 text-[13px] text-gray-500">
+          {[
+            { count: listings.length, label: listings.length === 1 ? "listing" : "listings" },
+            { count: services.length, label: services.length === 1 ? "service" : "services" },
+            { count: stats?.completed_orders_count ?? 0, label: "sales completed" },
+          ].map((fact, i) => (
+            <span key={fact.label}>
+              {i > 0 && <span className="mx-2.5 text-earth-300" aria-hidden="true">·</span>}
+              <span className="font-bold text-gray-900 tabular-nums">{fact.count}</span> {fact.label}
+            </span>
+          ))}
+        </p>
+
+        {user.bio && (
+          <p className="mt-3 max-w-2xl text-[13.5px] leading-relaxed text-gray-700">{user.bio}</p>
+        )}
+
+        {!isOwnProfile && (
+          <div className="mt-4 flex max-w-2xl items-center gap-2.5 rounded-2xl bg-primary-50 px-3.5 py-2.5 text-[12.5px] text-primary-700">
+            <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden="true" />
+            Pay through {BRAND.name}. Your money is held until you confirm you got what you paid for.
+          </div>
+        )}
+
+        <div role="tablist" aria-label="Profile sections" className="mt-7 flex gap-6 overflow-x-auto border-b border-earth-200 scrollbar-hide">
+          {tabs.map((tab) => {
+            const active = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setActiveTab(tab.key)}
+                className={`relative whitespace-nowrap pb-2.5 text-[13px] font-semibold transition-colors ${
+                  active ? "text-gray-900" : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {tab.label}
+                <span className="ml-1.5 text-[11px] font-medium text-gray-400 tabular-nums">{tab.count}</span>
+                {active && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-primary-500" />}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="pt-5" role="tabpanel">
+          {activeTab === "listings" &&
+            (listings.length > 0 ? (
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 lg:gap-4">
+                {listings.map((listing) => (
+                  <ListingCard key={listing.id} listing={listing} />
+                ))}
+              </div>
+            ) : (
+              <p className="py-10 text-center text-[13px] text-gray-500">
+                {firstName} hasn&apos;t listed any items yet.
+              </p>
+            ))}
+
+          {activeTab === "services" &&
+            (services.length > 0 ? (
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 lg:gap-4">
+                {services.map((service) => (
+                  <ServiceCard key={service.id} service={service} />
+                ))}
+              </div>
+            ) : (
+              <p className="py-10 text-center text-[13px] text-gray-500">
+                {firstName} doesn&apos;t offer any services yet.
+              </p>
+            ))}
+
+          {activeTab === "reviews" && <ReviewsTab reviews={reviews} averageRating={averageRating} />}
         </div>
       </div>
     </MainLayout>

@@ -26,7 +26,8 @@ const mockService: Service = {
   title: "Home Cleaning",
   description: "Professional cleaning",
   price: 25000,
-  category: "Cleaning",
+  category_id: "cat-2",
+  category: { id: "cat-2", name: "Cleaning", slug: "cleaning" },
   images: [
     { url: "https://res.cloudinary.com/test.jpg", public_id: "test/789" },
   ],
@@ -54,6 +55,11 @@ describe("ServiceCard", () => {
   it("renders service location", () => {
     render(<ServiceCard service={mockService} />);
     expect(screen.getByText("Ikeja")).toBeInTheDocument();
+  });
+
+  it("shows distance when the result came from a nearby search", () => {
+    render(<ServiceCard service={{ ...mockService, distance_km: 0.5 }} />);
+    expect(screen.getByText("Under 1 km away")).toBeInTheDocument();
   });
 
   it("shows INACTIVE badge when service is inactive", () => {

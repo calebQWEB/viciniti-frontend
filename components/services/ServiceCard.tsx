@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Service } from "@/types/service";
-import { formatPrice, truncateText } from "@/lib/utils";
+import { formatDistance, formatPrice, truncateText } from "@/lib/utils";
 import { MapPin, Wrench } from "lucide-react";
 
 export default function ServiceCard({ service }: { service: Service }) {
@@ -43,10 +43,18 @@ export default function ServiceCard({ service }: { service: Service }) {
           <p className="text-xl font-bold text-primary-600 mb-2">
             {formatPrice(service.price)}
           </p>
-          {service.location && (
-            <div className="flex items-center gap-1 text-gray-400 text-sm">
-              <MapPin className="w-3.5 h-3.5" />
-              <span>{truncateText(service.location, 25)}</span>
+          {(service.distance_km != null || service.location) && (
+            <div className="flex items-center gap-1 text-gray-400 text-sm min-w-0">
+              <MapPin className="w-3.5 h-3.5 shrink-0" />
+              {service.distance_km != null && (
+                <span className="shrink-0 font-semibold text-gray-700">
+                  {formatDistance(service.distance_km)}
+                </span>
+              )}
+              {service.distance_km != null && service.location && <span>·</span>}
+              {service.location && (
+                <span className="truncate">{truncateText(service.location, 25)}</span>
+              )}
             </div>
           )}
         </div>

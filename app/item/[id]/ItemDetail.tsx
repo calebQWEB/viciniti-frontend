@@ -3,6 +3,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import MainLayout from "@/components/layout/MainLayout";
+import DistanceFromYou from "@/components/location/DistanceFromYou";
 import api from "@/lib/api";
 import { Listing } from "@/types/listing";
 import { formatPrice, formatDate } from "@/lib/utils";
@@ -235,6 +236,7 @@ export default function ItemDetailPage() {
                 <div className="flex items-center gap-2 text-gray-400 text-sm font-medium">
                   <MapPin className="w-4 h-4 text-[#2D6A4F]/60" />
                   {listing.location}
+                  <DistanceFromYou latitude={listing.latitude} longitude={listing.longitude} />
                 </div>
               )}
               <div className="flex items-center gap-2 text-gray-400 text-sm font-medium">

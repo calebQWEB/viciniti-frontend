@@ -1,6 +1,8 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { useRouter } from "next/navigation";
 import LoginPage from "@/app/login/page";
+import { login } from "@/lib/auth";
+import api from "@/lib/api";
 
 // Mock Next.js router
 jest.mock("next/navigation", () => ({
@@ -13,10 +15,21 @@ jest.mock("next/link", () => ({
   default: ({
     children,
     href,
+    ...rest
   }: {
     children: React.ReactNode;
     href: string;
-  }) => <a href={href}>{children}</a>,
+  }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+
+// The map panel fetches listings; it isn't what these tests are about
+jest.mock("@/components/auth/NeighbourhoodPanel", () => ({
+  __esModule: true,
+  default: () => null,
 }));
 
 // Mock auth store
@@ -36,10 +49,20 @@ jest.mock("@/lib/api", () => ({
   },
 }));
 
-// Mock auth lib
+// Only the network call is mocked; redirect and error helpers run for real
 jest.mock("@/lib/auth", () => ({
+  ...jest.requireActual("@/lib/auth"),
   login: jest.fn(),
 }));
+
+const mockLogin = login as jest.Mock;
+const mockGet = api.get as jest.Mock;
+
+const fillAndSubmit = (email: string, password: string) => {
+  fireEvent.change(screen.getByLabelText("Email address"), { target: { value: email } });
+  fireEvent.change(screen.getByLabelText("Password"), { target: { value: password } });
+  fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
+};
 
 describe("LoginPage", () => {
   const mockPush = jest.fn();
@@ -49,56 +72,78 @@ describe("LoginPage", () => {
     (useRouter as jest.Mock).mockReturnValue({ push: mockPush });
   });
 
-  it("renders login form", () => {
+  it("renders the login form", () => {
     render(<LoginPage />);
-    expect(screen.getByPlaceholderText("you@example.com")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("••••••••")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /sign in/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Email address")).toBeInTheDocument();
+    expect(screen.getByLabelText("Password")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sign in/i })).toBeInTheDocument();
   });
 
-  it("renders forgot password link", () => {
+  it("renders the forgot password link", () => {
     render(<LoginPage />);
-    expect(screen.getByText("Forgot password?")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Forgot password?" })).toHaveAttribute(
+      "href",
+      "/forgot-password",
+    );
   });
 
-  it("renders sign up link", () => {
+  it("switches to sign-up from the tab, with Sign in marked as current", () => {
     render(<LoginPage />);
-    expect(screen.getByText("Sign up for free")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Create account" })).toHaveAttribute("href", "/signup");
+    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute("aria-current", "page");
   });
 
-  it("updates email input on change", () => {
+  it("updates the email and password fields", () => {
     render(<LoginPage />);
-    const emailInput = screen.getByPlaceholderText("you@example.com");
-    fireEvent.change(emailInput, { target: { value: "test@viciniti.com" } });
-    expect(emailInput).toHaveValue("test@viciniti.com");
+    const email = screen.getByLabelText("Email address");
+    const password = screen.getByLabelText("Password");
+    fireEvent.change(email, { target: { value: "test@example.com" } });
+    fireEvent.change(password, { target: { value: "password123" } });
+    expect(email).toHaveValue("test@example.com");
+    expect(password).toHaveValue("password123");
   });
 
-  it("updates password input on change", () => {
+  it("shows and hides the password", () => {
     render(<LoginPage />);
-    const passwordInput = screen.getByPlaceholderText("••••••••");
-    fireEvent.change(passwordInput, { target: { value: "password123" } });
-    expect(passwordInput).toHaveValue("password123");
+    const password = screen.getByLabelText("Password");
+    expect(password).toHaveAttribute("type", "password");
+    fireEvent.click(screen.getByRole("button", { name: "Show password" }));
+    expect(password).toHaveAttribute("type", "text");
   });
 
-  it("shows error message on failed login", async () => {
-    const { login } = require("@/lib/auth");
-    login.mockRejectedValueOnce({
+  it("shows the API's error message on failed login", async () => {
+    mockLogin.mockRejectedValueOnce({
       response: { data: { detail: "Invalid email or password" } },
     });
 
     render(<LoginPage />);
-    fireEvent.change(screen.getByPlaceholderText("you@example.com"), {
-      target: { value: "wrong@email.com" },
-    });
-    fireEvent.change(screen.getByPlaceholderText("••••••••"), {
-      target: { value: "wrongpass" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
+    fillAndSubmit("wrong@example.com", "wrongpass");
 
     await waitFor(() => {
-      expect(screen.getByText("Invalid email or password")).toBeInTheDocument();
+      expect(screen.getByRole("alert")).toHaveTextContent("Invalid email or password");
     });
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it("sends users who haven't finished onboarding to /welcome", async () => {
+    mockLogin.mockResolvedValueOnce({ access_token: "t", token_type: "bearer" });
+    mockGet.mockResolvedValueOnce({ data: { id: "1", name: "Ada", onboarded_at: null } });
+
+    render(<LoginPage />);
+    fillAndSubmit("ada@example.com", "password123");
+
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/welcome"));
+  });
+
+  it("sends onboarded users to the dashboard", async () => {
+    mockLogin.mockResolvedValueOnce({ access_token: "t", token_type: "bearer" });
+    mockGet.mockResolvedValueOnce({
+      data: { id: "1", name: "Ada", onboarded_at: "2026-10-01T00:00:00" },
+    });
+
+    render(<LoginPage />);
+    fillAndSubmit("ada@example.com", "password123");
+
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/dashboard"));
   });
 });

@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import SuccessModal from "@/components/shared/SuccessModal";
+import PayoutAccountHint from "@/components/shared/PayoutAccountHint";
+import { useHasPayoutAccount } from "@/hooks/usePayoutAccount";
 
 import {
   ArrowLeft,
@@ -34,6 +36,7 @@ interface Category {
 
 export default function CreateServicePage() {
   const router = useRouter();
+  const { hasPayoutAccount } = useHasPayoutAccount();
   const [showSuccess, setShowSuccess] = useState(false);
 
   const { data: categories, isLoading: loadingCategories } = useQuery({
@@ -238,6 +241,8 @@ export default function CreateServicePage() {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
           {/* FORM */}
           <form onSubmit={handleSubmit} className="space-y-6">
+            <PayoutAccountHint />
+
             {/* General error */}
             {generalError && (
               <div
@@ -740,7 +745,11 @@ export default function CreateServicePage() {
       {showSuccess && (
         <SuccessModal
           title="Service Published!"
-          message="Your Service is now live and visible to buyers nearby."
+          message={
+            hasPayoutAccount
+              ? "Your service is now live and visible to people nearby."
+              : "Your service is now live. Add a payout account from your profile so you get paid when someone books."
+          }
           buttonText="View My Services"
           onClose={() => router.push("/dashboard/services")}
         />

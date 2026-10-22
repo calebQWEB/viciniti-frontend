@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Listing } from "@/types/listing";
-import { formatPrice, truncateText } from "@/lib/utils";
+import { formatDistance, formatPrice, truncateText } from "@/lib/utils";
 import { MapPin, ShoppingBag } from "lucide-react";
 
 export default function ListingCard({ listing }: { listing: Listing }) {
@@ -43,10 +43,18 @@ export default function ListingCard({ listing }: { listing: Listing }) {
           <p className="text-xl font-bold text-primary-600 mb-2">
             {formatPrice(listing.price)}
           </p>
-          {listing.location && (
-            <div className="flex items-center gap-1 text-gray-400 text-sm">
-              <MapPin className="w-3.5 h-3.5" />
-              <span>{truncateText(listing.location, 25)}</span>
+          {(listing.distance_km != null || listing.location) && (
+            <div className="flex items-center gap-1 text-gray-400 text-sm min-w-0">
+              <MapPin className="w-3.5 h-3.5 shrink-0" />
+              {listing.distance_km != null && (
+                <span className="shrink-0 font-semibold text-gray-700">
+                  {formatDistance(listing.distance_km)}
+                </span>
+              )}
+              {listing.distance_km != null && listing.location && <span>·</span>}
+              {listing.location && (
+                <span className="truncate">{truncateText(listing.location, 25)}</span>
+              )}
             </div>
           )}
         </div>

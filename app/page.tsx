@@ -1,72 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { BRAND } from "@/lib/brand";
+import { PLATFORM } from "@/lib/platform";
 import { useQuery } from "@tanstack/react-query";
 import MainLayout from "@/components/layout/MainLayout";
 import { useAuth } from "@/hooks/useAuth";
+import { useLocation } from "@/hooks/useLocation";
 import api from "@/lib/api";
-import { formatPrice } from "@/lib/utils";
-import Link from "next/link";
-import Image from "next/image";
-import {
-  MapPin,
-  ShoppingBag,
-  ShieldCheck,
-  Wrench,
-  ArrowRight,
-  PlusCircle,
-  LayoutDashboard,
-  Users,
-  Package,
-} from "lucide-react";
-import * as LucideIcons from "lucide-react";
-
-interface CategoryItem {
-  id: string;
-  name: string;
-  slug: string;
-  type: "item" | "service";
-  icon: string | null;
-}
-
-interface FeaturedListing {
-  id: string;
-  title: string;
-  price: number;
-  images: { url: string; public_id: string }[];
-}
-
-interface FeaturedService {
-  id: string;
-  title: string;
-  price: number;
-  images: { url: string; public_id: string }[];
-}
+import NeighbourhoodMap from "@/components/location/NeighbourhoodMap";
+import HeroSearch from "@/components/home/HeroSearch";
+import NearYou from "@/components/home/NearYou";
+import CategoryChips from "@/components/home/CategoryChips";
+import TrustSection from "@/components/home/TrustSection";
+import SellBand from "@/components/home/SellBand";
+import { CategoryItem } from "@/components/home/CategoryIcon";
+import { Listing } from "@/types/listing";
+import { Service } from "@/types/service";
 
 interface PlatformStats {
   active_listings: number;
   total_users: number;
 }
 
-function CategoryIcon({ name, className }: { name: string | null; className?: string }) {
-  const pascalCase = (name || "package")
-      .split("-")
-      .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
-      .join("");
-  const Icon = (LucideIcons as any)[pascalCase] || Package;
-  return <Icon className={className} />;
-}
+// Listings fetched for the home feed (the map shows the first three items)
+const FEATURED_LIMIT = 8;
 
 export default function LandingPage() {
   const { user, isAuthenticated } = useAuth();
-  const [categoryTab, setCategoryTab] = useState<"item" | "service">("item");
+  const { isReady, nearbyParams, hasLocation, locationName, radiusKm } = useLocation();
 
   const { data: featured } = useQuery({
-    queryKey: ["home-featured"],
+    // The limit is part of the key: the auth pages' map fetches a different number
+    queryKey: ["home-featured", FEATURED_LIMIT, nearbyParams],
     queryFn: async () => {
-      const response = await api.get("/home/featured", { params: { limit: 6 } });
-      return response.data as { items: FeaturedListing[]; services: FeaturedService[] };
+      const response = await api.get("/home/featured", {
+        params: { limit: FEATURED_LIMIT, ...nearbyParams },
+      });
+      return response.data as { items: Listing[]; services: Service[] };
     },
+    enabled: isReady,
   });
 
   const { data: stats } = useQuery({
@@ -78,320 +50,99 @@ export default function LandingPage() {
   });
 
   const { data: categories } = useQuery({
-    queryKey: ["categories", categoryTab],
+    queryKey: ["categories", "all"],
     queryFn: async () => {
-      const response = await api.get("/categories/", { params: { type: categoryTab } });
+      const response = await api.get("/categories/");
       return response.data as CategoryItem[];
     },
   });
 
-  const heroListings = featured?.items?.slice(0, 3) ?? [];
   const firstName = user?.name?.split(" ")[0];
+  const nearbyItems = featured?.items ?? [];
+  const sellingNearby = hasLocation && nearbyItems.length > 0;
 
   return (
-      <MainLayout>
-        {/* ============================================================
-          HERO
+    <MainLayout>
+      {/* ============================================================
+          HERO: search first, with the neighbourhood map beside it
       ============================================================ */}
-        <section className="bg-earth-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20">
-            <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-              {/* Copy */}
-              <div>
-                {isAuthenticated ? (
-                    <>
-                      <p className="text-primary-600 font-semibold text-sm mb-3">
-                        Welcome back, {firstName}
-                      </p>
-                      <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight leading-[1.1]">
-                        What are you looking for today?
-                      </h1>
-                      <p className="mt-4 md:mt-6 text-base md:text-lg text-gray-600 leading-relaxed max-w-lg">
-                        Pick up where you left off, list something new, or see what's happening in your dashboard.
-                      </p>
-                      <div className="mt-8 flex flex-col sm:flex-row gap-3">
-                        <Link
-                            href="/dashboard"
-                            className="btn-primary text-sm md:text-base px-6 py-3 flex items-center justify-center gap-2"
-                        >
-                          <LayoutDashboard className="w-4 h-4" />
-                          Go to Dashboard
-                        </Link>
-                        <Link
-                            href="/dashboard/listings/create"
-                            className="btn-outline bg-white text-sm md:text-base px-6 py-3 flex items-center justify-center gap-2"
-                        >
-                          <PlusCircle className="w-4 h-4" />
-                          List an Item
-                        </Link>
-                      </div>
-                    </>
-                ) : (
-                    <>
-                      <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight leading-[1.1]">
-                        Buy, sell, and hire
-                        <br />
-                        right in your neighborhood.
-                      </h1>
-                      <p className="mt-4 md:mt-6 text-base md:text-lg text-gray-600 leading-relaxed max-w-lg">
-                        Viciniti connects you with people nearby — for items you need, skills you're looking for, or things you're ready to let go of.
-                      </p>
-                      <div className="mt-8 flex flex-col sm:flex-row gap-3">
-                        <Link
-                            href="/browse/items"
-                            className="btn-primary text-sm md:text-base px-6 md:px-8 py-3 flex items-center justify-center gap-2"
-                        >
-                          Browse Items
-                        </Link>
-                        <Link
-                            href="/browse/services"
-                            className="btn-outline bg-white text-sm md:text-base px-6 md:px-8 py-3 flex items-center justify-center gap-2"
-                        >
-                          Hire Services
-                        </Link>
-                      </div>
-                    </>
-                )}
+      <section className="bg-linear-to-b from-primary-50 to-earth-50">
+        <div className="max-w-7xl mx-auto grid items-center gap-8 px-4 py-10 sm:px-6 md:py-14 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:gap-12 lg:px-8">
+          <div>
+            <span className="inline-flex items-center gap-2 rounded-full border border-primary-100 bg-white py-1 pl-2 pr-3 text-xs font-semibold text-primary-700">
+              <span className="h-2 w-2 rounded-full bg-accent-500 ring-4 ring-accent-400/25" aria-hidden="true" />
+              {isAuthenticated && firstName
+                ? `Welcome back, ${firstName}`
+                : sellingNearby
+                  ? `People are selling near ${locationName} right now`
+                  : `Your neighbourhood marketplace`}
+            </span>
 
-                {stats && stats.active_listings > 0 && (
-                    <div className="mt-10 flex items-center gap-6">
-                      <div>
-                        <p className="text-2xl font-bold text-gray-900">{stats.active_listings}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">Live listings</p>
-                      </div>
-                      <div className="w-px h-8 bg-gray-200" />
-                      <div>
-                        <p className="text-2xl font-bold text-gray-900">{stats.total_users}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">People on Viciniti</p>
-                      </div>
-                    </div>
-                )}
-              </div>
-
-              {/* Live listings stack */}
-              {heroListings.length > 0 && (
-                  <div className="relative h-[340px] sm:h-[400px] hidden sm:block">
-                    {heroListings.map((listing, idx) => {
-                      const rotations = ["-rotate-3", "rotate-2", "-rotate-1"];
-                      const offsets = ["top-0 left-4", "top-16 right-0", "top-32 left-16"];
-                      return (
-                          <Link
-                              key={listing.id}
-                              href={`/item/${listing.id}`}
-                              className={`absolute w-56 bg-white rounded-2xl border border-gray-100 shadow-lg p-3 transition-transform hover:scale-[1.03] hover:z-10 ${rotations[idx]} ${offsets[idx]}`}
-                          >
-                            <div className="relative aspect-square rounded-xl overflow-hidden bg-gray-50 mb-2.5">
-                              {listing.images?.[0]?.url ? (
-                                  <Image src={listing.images[0].url} alt={listing.title} fill className="object-cover" />
-                              ) : (
-                                  <div className="w-full h-full flex items-center justify-center">
-                                    <ShoppingBag className="w-6 h-6 text-gray-300" />
-                                  </div>
-                              )}
-                            </div>
-                            <p className="text-xs font-bold text-gray-900 truncate">{listing.title}</p>
-                            <p className="text-sm font-black text-primary-600 mt-0.5">{formatPrice(listing.price)}</p>
-                          </Link>
-                      );
-                    })}
-                  </div>
+            <h1 className="mt-4 text-3xl sm:text-4xl lg:text-[2.5rem] font-extrabold leading-[1.1] tracking-tight text-gray-900 text-balance">
+              {isAuthenticated ? (
+                "What are you looking for today?"
+              ) : (
+                <>
+                  Find it <span className="text-primary-500">nearby</span>. Buy, sell and hire in
+                  your neighbourhood.
+                </>
               )}
-            </div>
-          </div>
-        </section>
+            </h1>
+            <p className="mt-3 max-w-lg text-sm md:text-[15px] leading-relaxed text-gray-600">
+              Second-hand gadgets, furniture, cleaners, tutors and more, from people a short ride
+              away. Pay safely through {BRAND.name} and pick up today.
+            </p>
 
-        {/* ============================================================
-          HOW IT WORKS
-      ============================================================ */}
-        <section className="py-12 md:py-16 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="mb-8 md:mb-12 max-w-xl">
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900">How Viciniti works</h2>
-              <p className="mt-3 text-gray-500 text-sm md:text-base">
-                Simple, secure, and built around your community.
-              </p>
+            <div className="mt-6">
+              <HeroSearch categories={categories ?? []} />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-              {[
-                {
-                  icon: <MapPin className="w-5 h-5 text-primary-600" />,
-                  title: "Set your location",
-                  description: "Tell us where you are so we can show you what's actually nearby.",
-                },
-                {
-                  icon: <ShoppingBag className="w-5 h-5 text-primary-600" />,
-                  title: "Buy, sell, or hire",
-                  description: "List items you no longer need, or find people for the job you need done.",
-                },
-                {
-                  icon: <ShieldCheck className="w-5 h-5 text-primary-600" />,
-                  title: "Pay securely",
-                  description: "Payments are held safely until both sides confirm the transaction is complete.",
-                },
-              ].map((item, index) => (
-                  <div
-                      key={index}
-                      className="p-5 md:p-6 rounded-2xl border border-gray-100 bg-white hover:border-primary-100 hover:shadow-lg transition-all duration-300"
-                  >
-                    <div className="w-11 h-11 bg-primary-50 rounded-xl flex items-center justify-center mb-4">
-                      {item.icon}
-                    </div>
-                    <h3 className="text-base font-bold text-gray-900 mb-2">{item.title}</h3>
-                    <p className="text-sm text-gray-500 leading-relaxed">{item.description}</p>
-                  </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ============================================================
-          CATEGORIES
-      ============================================================ */}
-        <section className="py-12 md:py-16 bg-earth-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 md:mb-8 gap-4">
+            <dl className="mt-6 flex flex-wrap gap-x-6 gap-y-3 text-xs text-gray-500">
+              {stats && stats.active_listings > 0 && (
+                <div>
+                  <dt className="sr-only">Live listings</dt>
+                  <dd className="text-lg font-bold text-gray-900 tabular-nums">{stats.active_listings}</dd>
+                  <dd>live listings</dd>
+                </div>
+              )}
               <div>
-                <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Browse by category</h2>
-                <p className="mt-2 text-gray-500 text-sm md:text-base">
-                  Find exactly what you're after.
-                </p>
+                <dt className="sr-only">Cost to list</dt>
+                <dd className="text-lg font-bold text-gray-900">₦0</dd>
+                <dd>to list</dd>
               </div>
-
-              <div className="flex bg-white border border-gray-200 p-1 rounded-xl w-fit">
-                <button
-                    onClick={() => setCategoryTab("item")}
-                    className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all ${
-                        categoryTab === "item" ? "bg-primary-500 text-white" : "text-gray-500 hover:text-gray-700"
-                    }`}
-                >
-                  Items
-                </button>
-                <button
-                    onClick={() => setCategoryTab("service")}
-                    className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all ${
-                        categoryTab === "service" ? "bg-primary-500 text-white" : "text-gray-500 hover:text-gray-700"
-                    }`}
-                >
-                  Services
-                </button>
+              <div>
+                <dt className="sr-only">Seller fee</dt>
+                <dd className="text-lg font-bold text-gray-900 tabular-nums">{PLATFORM.feePercent}%</dd>
+                <dd>fee, only when it sells</dd>
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-              {categories?.map((category) => (
-                  <Link
-                      key={category.id}
-                      href={`/browse/${categoryTab === "item" ? "items" : "services"}?category=${category.slug}`}
-                      className="flex flex-col items-center p-4 md:p-5 bg-white rounded-xl border border-transparent hover:border-primary-200 hover:-translate-y-0.5 transition-all"
-                  >
-                    <div className="text-gray-400 group-hover:text-primary-500 mb-2.5">
-                      <CategoryIcon name={category.icon} className="w-5 h-5" />
-                    </div>
-                    <p className="text-xs md:text-sm text-gray-800 font-bold text-center">{category.name}</p>
-                  </Link>
-              ))}
-            </div>
+            </dl>
           </div>
-        </section>
 
-        {/* ============================================================
-          LIVE LISTINGS PREVIEW
-      ============================================================ */}
-        {(featured?.items?.length ?? 0) > 0 || (featured?.services?.length ?? 0) > 0 ? (
-            <section className="py-12 md:py-16 bg-white">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-end justify-between mb-6 md:mb-8">
-                  <div>
-                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Happening right now</h2>
-                    <p className="mt-2 text-gray-500 text-sm md:text-base">Fresh listings from your community.</p>
-                  </div>
-                </div>
+          <div
+            className="relative aspect-[1/0.85] w-full overflow-hidden rounded-[28px] bg-primary-700 shadow-[0_30px_60px_-32px_rgba(23,61,44,0.7)]"
+            aria-label={hasLocation ? `Map of listings around ${locationName}` : "Map of your neighbourhood"}
+            role="img"
+          >
+            <NeighbourhoodMap
+              listings={nearbyItems}
+              radiusLabel={hasLocation ? `${radiusKm} km around you` : undefined}
+            />
+          </div>
+        </div>
+      </section>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
-                  {featured?.items?.map((listing) => (
-                      <Link
-                          key={listing.id}
-                          href={`/item/${listing.id}`}
-                          className="group bg-white rounded-xl border border-gray-100 hover:shadow-lg transition-all overflow-hidden"
-                      >
-                        <div className="relative aspect-square bg-gray-50">
-                          {listing.images?.[0]?.url ? (
-                              <Image
-                                  src={listing.images[0].url}
-                                  alt={listing.title}
-                                  fill
-                                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                              />
-                          ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <ShoppingBag className="w-6 h-6 text-gray-300" />
-                              </div>
-                          )}
-                        </div>
-                        <div className="p-2.5">
-                          <p className="text-xs font-bold text-gray-900 truncate">{listing.title}</p>
-                          <p className="text-sm font-black text-primary-600 mt-0.5">{formatPrice(listing.price)}</p>
-                        </div>
-                      </Link>
-                  ))}
-                  {featured?.services?.map((service) => (
-                      <Link
-                          key={service.id}
-                          href={`/services/${service.id}`}
-                          className="group bg-white rounded-xl border border-gray-100 hover:shadow-lg transition-all overflow-hidden"
-                      >
-                        <div className="relative aspect-square bg-gray-50">
-                          {service.images?.[0]?.url ? (
-                              <Image
-                                  src={service.images[0].url}
-                                  alt={service.title}
-                                  fill
-                                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                              />
-                          ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <Wrench className="w-6 h-6 text-gray-300" />
-                              </div>
-                          )}
-                        </div>
-                        <div className="p-2.5">
-                          <p className="text-xs font-bold text-gray-900 truncate">{service.title}</p>
-                          <p className="text-sm font-black text-primary-600 mt-0.5">{formatPrice(service.price)}</p>
-                        </div>
-                      </Link>
-                  ))}
-                </div>
-              </div>
-            </section>
-        ) : null}
+      {/* Listings come right after the hero; rendered once loaded so tab defaults are right */}
+      {featured && <NearYou items={featured.items} services={featured.services} />}
 
-        {/* ============================================================
-          CTA — only for logged-out visitors
-      ============================================================ */}
-        {!isAuthenticated && (
-            <section className="py-10 md:py-16 px-4">
-              <div className="max-w-6xl mx-auto bg-primary-600 rounded-3xl md:rounded-[2rem] p-8 md:p-14 text-center relative overflow-hidden shadow-2xl">
-                <div className="absolute top-0 left-0 -translate-x-1/2 -translate-y-1/2 w-36 h-36 md:w-52 md:h-52 bg-primary-500 rounded-full opacity-50" />
-                <div className="absolute bottom-0 right-0 translate-x-1/3 translate-y-1/3 w-48 h-48 md:w-72 md:h-72 bg-primary-400 rounded-full opacity-20" />
+      <CategoryChips categories={categories ?? []} />
 
-                <div className="relative z-10">
-                  <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
-                    Your neighborhood is waiting.
-                  </h2>
-                  <p className="text-primary-100 text-sm md:text-base mb-6 md:mb-8 max-w-xl mx-auto">
-                    Create an account in under a minute and start connecting with people near you.
-                  </p>
-                  <Link
-                      href="/signup"
-                      className="inline-block w-full sm:w-auto bg-white text-primary-600 px-6 md:px-8 py-3 rounded-xl text-sm md:text-base font-bold hover:bg-earth-50 transition-all shadow-xl"
-                  >
-                    Get started for free
-                  </Link>
-                </div>
-              </div>
-            </section>
-        )}
-      </MainLayout>
+      {/* New visitors only: how payments stay safe, and the pitch to sellers */}
+      {!isAuthenticated && (
+        <>
+          <TrustSection />
+          <SellBand />
+        </>
+      )}
+    </MainLayout>
   );
 }

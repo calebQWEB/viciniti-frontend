@@ -1,5 +1,6 @@
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import LocationGate from "@/components/location/LocationGate";
 
 export default function MainLayout({
   children,
@@ -11,6 +12,7 @@ export default function MainLayout({
       <Navbar />
       <main className="flex-1">{children}</main>
       <Footer />
+      <LocationGate />
     </div>
   );
 }

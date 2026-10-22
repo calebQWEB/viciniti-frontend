@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useLocation } from "@/hooks/useLocation";
+import { usePlaceSearch } from "@/hooks/usePlaceSearch";
+import { detectCurrentLocation, Place } from "@/lib/geo";
 import { MapPin, Loader2 } from "lucide-react";
 
 interface LocationPickerProps {
@@ -21,57 +22,78 @@ export default function LocationPicker({
   longitude,
   onChange,
 }: LocationPickerProps) {
-  const { detectLocation } = useLocation();
   const [detecting, setDetecting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  // Only search while the user is typing, not for a saved value loaded into an edit form
+  const [isTyping, setIsTyping] = useState(false);
+  const { results, isSearching } = usePlaceSearch(isTyping ? location : "");
+
+  const hasCoordinates = latitude !== null && longitude !== null;
 
   const handleDetect = async () => {
     setDetecting(true);
+    setError(null);
+    try {
+      const place = await detectCurrentLocation();
+      onChange(place.name, place.latitude, place.longitude);
+      setIsTyping(false);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setDetecting(false);
+    }
+  };
 
-    // Wrap detectLocation in a promise so we can await it
-    await new Promise<void>((resolve) => {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
-          );
-          const data = await response.json();
-          const locationName =
-            data.address.city ||
-            data.address.town ||
-            data.address.village ||
-            "Unknown location";
-
-          // Update both the store and the form
-          onChange(locationName, latitude, longitude);
-          resolve();
-        },
-        (error) => {
-          console.error("Location error:", error);
-          resolve();
-        },
-      );
-    });
-
-    setDetecting(false);
+  const handlePick = (place: Place) => {
+    onChange(place.name, place.latitude, place.longitude);
+    setIsTyping(false);
   };
 
   return (
     <div className="space-y-2">
-      {/* Manual text input */}
       <div className="relative">
         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
         <input
           type="text"
           value={location}
-          onChange={(e) => onChange(e.target.value, latitude, longitude)}
-          placeholder="Enter your location"
+          onChange={(e) => {
+            // Free text has no coordinates until a suggestion is picked
+            onChange(e.target.value, null, null);
+            setIsTyping(true);
+          }}
+          onBlur={() => setIsTyping(false)}
+          placeholder="Search for your area"
           className="input pl-9 w-full"
+          autoComplete="off"
         />
+        {isSearching && (
+          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />
+        )}
+
+        {isTyping && results.length > 0 && (
+          <ul className="absolute z-20 mt-1 w-full bg-white border border-earth-200 rounded-2xl shadow-lg divide-y divide-gray-100 overflow-hidden">
+            {results.map((place) => (
+              <li key={place.detail ?? `${place.latitude},${place.longitude}`}>
+                <button
+                  type="button"
+                  // Fire before the input's blur hides the list
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handlePick(place);
+                  }}
+                  className="w-full text-left px-4 py-2.5 hover:bg-primary-50 transition-colors"
+                >
+                  <p className="text-sm font-semibold text-gray-900">{place.name}</p>
+                  {place.detail && (
+                    <p className="text-[11px] text-gray-400 truncate">{place.detail}</p>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
-      {/* Detect button */}
       <button
         type="button"
         onClick={handleDetect}
@@ -86,11 +108,18 @@ export default function LocationPicker({
         {detecting ? "Detecting..." : "Use my current location"}
       </button>
 
-      {/* Confirmation — show coordinates once detected */}
-      {latitude && longitude && (
+      {error && <p className="text-xs text-red-600">{error}</p>}
+
+      {hasCoordinates ? (
         <p className="text-xs text-gray-400">
-          Coordinates captured ({latitude.toFixed(4)}, {longitude.toFixed(4)})
+          Location pinned ({latitude.toFixed(4)}, {longitude.toFixed(4)})
         </p>
+      ) : (
+        location.trim() && (
+          <p className="text-xs text-amber-600">
+            Pick a suggestion from the list so people nearby can find this.
+          </p>
+        )
       )}
     </div>
   );
