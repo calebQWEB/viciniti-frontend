@@ -11,6 +11,8 @@ export interface User {
   intent?: UserIntent | null;
   // Null until the user finishes or skips the welcome flow
   onboarded_at?: string | null;
+  // Unlocks the admin area (/admin); only ever present on your own account
+  is_admin?: boolean;
 }
 
 export type UserIntent = "buy" | "sell" | "both";

@@ -138,6 +138,23 @@ h6 {
   .float-field input:not(:placeholder-shown) + label {
     @apply top-3.5 text-[10.5px] font-semibold tracking-wide text-primary-600;
   }
+  /* Browser autofill doesn't count as "filled" until the user interacts, so float the label for it too.
+     Kept as separate rules: one unsupported selector would cancel the whole list. */
+  .float-field input:autofill + label {
+    @apply top-3.5 text-[10.5px] font-semibold tracking-wide text-primary-600;
+  }
+  .float-field input:-webkit-autofill + label {
+    @apply top-3.5 text-[10.5px] font-semibold tracking-wide text-primary-600;
+  }
+  /* Keep our own field colours instead of Chrome's blue autofill fill (it can only be covered, not removed) */
+  .float-field input:-webkit-autofill {
+    -webkit-text-fill-color: var(--color-gray-900);
+    box-shadow: inset 0 0 0 100px var(--color-earth-100);
+    caret-color: var(--color-gray-900);
+  }
+  .float-field input:-webkit-autofill:focus {
+    box-shadow: inset 0 0 0 100px #fff;
+  }
   .float-field .float-icon {
     @apply absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none transition-colors duration-150;
   }

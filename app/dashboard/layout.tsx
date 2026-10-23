@@ -24,6 +24,7 @@ import {
   Menu,
   X,
   ChevronLeft,
+  ShieldCheck,
 } from "lucide-react";
 
 type BadgeKey =
@@ -91,6 +92,13 @@ const sidebarLinks: {
     badge: "profile",
   },
 ];
+
+// Shown at the end of the sidebar, to admins only
+const adminLink: (typeof sidebarLinks)[number] = {
+  href: "/admin/logs",
+  icon: <ShieldCheck className="h-5 w-5" />,
+  label: "Admin",
+};
 
 const SIDEBAR_STORAGE_KEY = "junction:sidebar-expanded";
 
@@ -303,7 +311,7 @@ export default function DashboardLayout({
           </div>
 
           <nav className="flex-1 space-y-1 overflow-y-auto overflow-x-hidden p-4">
-            {sidebarLinks.map((link) => {
+            {(user?.is_admin ? [...sidebarLinks, adminLink] : sidebarLinks).map((link) => {
               const isActive = pathname === link.href;
               const count = link.badge ? (badgeCounts?.[link.badge] ?? 0) : 0;
               const isDot = link.badge === "profile";

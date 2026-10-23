@@ -1,10 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { AlertCircle, ArrowRight, Eye, EyeOff, Loader2, type LucideIcon } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  Loader2,
+  type LucideIcon,
+} from "lucide-react";
 
-interface FieldProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "placeholder"> {
+interface FieldProps extends Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  "placeholder"
+> {
   id: string;
   label: string;
   icon: LucideIcon;
@@ -13,7 +22,13 @@ interface FieldProps
 }
 
 // Filled field with a leading icon and floating label (styles: .float-field in globals.css)
-export function Field({ id, label, icon: Icon, hint, ...inputProps }: FieldProps) {
+export function Field({
+  id,
+  label,
+  icon: Icon,
+  hint,
+  ...inputProps
+}: FieldProps) {
   return (
     <div>
       <div className="float-field">
@@ -26,13 +41,24 @@ export function Field({ id, label, icon: Icon, hint, ...inputProps }: FieldProps
   );
 }
 
-export function PasswordField({ id, label, icon: Icon, hint, ...inputProps }: FieldProps) {
+export function PasswordField({
+  id,
+  label,
+  icon: Icon,
+  hint,
+  ...inputProps
+}: FieldProps) {
   const [visible, setVisible] = useState(false);
 
   return (
     <div>
       <div className="float-field">
-        <input id={id} placeholder=" " {...inputProps} type={visible ? "text" : "password"} />
+        <input
+          id={id}
+          placeholder=" "
+          {...inputProps}
+          type={visible ? "text" : "password"}
+        />
         <label htmlFor={id}>{label}</label>
         <Icon className="float-icon" aria-hidden="true" />
         <button
@@ -42,7 +68,11 @@ export function PasswordField({ id, label, icon: Icon, hint, ...inputProps }: Fi
           aria-pressed={visible}
           className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-gray-600 rounded-xl transition-colors"
         >
-          {visible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          {visible ? (
+            <EyeOff className="w-4 h-4" />
+          ) : (
+            <Eye className="w-4 h-4" />
+          )}
         </button>
       </div>
       {hint}
