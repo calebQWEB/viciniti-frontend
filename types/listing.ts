@@ -14,6 +14,9 @@ export interface Listing {
   latitude?: number | null;
   longitude?: number | null;
   created_at: string;
+  // Set when an admin removed it; the seller can't edit it until it's restored
+  removed_at?: string | null;
+  removal_reason?: string | null;
   // Only present when the request included a location
   distance_km?: number | null;
 }

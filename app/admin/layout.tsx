@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, LayoutDashboard, Menu, ReceiptText, ScrollText, X } from "lucide-react";
+import { ArrowLeft, LayoutDashboard, Menu, ReceiptText, ScrollText, Store, Tags, Users, X } from "lucide-react";
 import { BRAND } from "@/lib/brand";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchOverview } from "@/lib/adminOrders";
@@ -24,6 +24,9 @@ const adminLinks: {
     icon: <ReceiptText className="h-4.5 w-4.5" />,
     badge: (a) => a.failing_payouts + a.refunds + a.disputes,
   },
+  { href: "/admin/users", label: "Users", icon: <Users className="h-4.5 w-4.5" /> },
+  { href: "/admin/listings", label: "Listings", icon: <Store className="h-4.5 w-4.5" /> },
+  { href: "/admin/categories", label: "Categories", icon: <Tags className="h-4.5 w-4.5" /> },
   {
     href: "/admin/logs",
     label: "Logs",
@@ -77,7 +80,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   );
 
   return (
-    <div className="min-h-screen bg-earth-50 lg:flex">
+    <div className="min-h-screen bg-earth-50">
       {/* Phone top bar */}
       <header className="sticky top-0 z-40 flex items-center justify-between border-b border-earth-200 bg-white px-3 py-2 lg:hidden">
         <button
@@ -102,7 +105,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-60 flex-col border-r border-earth-200 bg-white transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:w-56 lg:shrink-0 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-60 flex-col border-r border-earth-200 bg-white transition-transform duration-200 lg:w-56 lg:translate-x-0 ${
           isMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -155,7 +158,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      <div className="min-w-0 flex-1">{children}</div>
+      <div className="min-w-0 lg:ml-56">{children}</div>
     </div>
   );
 }

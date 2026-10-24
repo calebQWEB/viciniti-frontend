@@ -20,6 +20,9 @@ export interface Service {
   status: ServiceStatus;
   user_id: string;
   created_at: string;
+  // Set when an admin removed it; the seller can't edit it until it's restored
+  removed_at?: string | null;
+  removal_reason?: string | null;
   // Only present when the request included a location
   distance_km?: number | null;
   owner?: {

@@ -7,7 +7,10 @@ import api from "@/lib/api";
 // Mock Next.js router
 jest.mock("next/navigation", () => ({
   useRouter: jest.fn(),
+  useSearchParams: () => mockSearchParams,
 }));
+
+let mockSearchParams = new URLSearchParams();
 
 // Mock Next.js Link
 jest.mock("next/link", () => ({
@@ -109,6 +112,22 @@ describe("LoginPage", () => {
     expect(password).toHaveAttribute("type", "password");
     fireEvent.click(screen.getByRole("button", { name: "Show password" }));
     expect(password).toHaveAttribute("type", "text");
+  });
+
+  it("explains a suspension when sent here from a suspended session", () => {
+    mockSearchParams = new URLSearchParams("notice=suspended");
+    render(<LoginPage />);
+    expect(screen.getByText(/This account has been suspended/)).toBeInTheDocument();
+    mockSearchParams = new URLSearchParams();
+  });
+
+  it("shows the suspension reason when a suspended user signs in", async () => {
+    mockLogin.mockRejectedValueOnce({
+      response: { status: 403, data: { detail: "This account has been suspended. Reason: Fake listings." } },
+    });
+    render(<LoginPage />);
+    fillAndSubmit("ada@example.com", "right-password");
+    expect(await screen.findByText(/Reason: Fake listings/)).toBeInTheDocument();
   });
 
   it("shows the API's error message on failed login", async () => {

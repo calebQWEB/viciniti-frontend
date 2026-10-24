@@ -44,12 +44,14 @@ const STATUS_META: Record<
 const TONE_CLASSES: Record<string, string> = {
   green: "text-[#2D6A4F] bg-[#2D6A4F]/10 border-[#2D6A4F]/15",
   gray: "text-gray-500 bg-gray-100 border-gray-200",
+  red: "text-red-700 bg-red-50 border-red-200",
 };
 
 const FILTER_ORDER: (ListingStatus | "all")[] = ["all", "active", "sold"];
 
-function StatusPill({ status }: { status: ListingStatus }) {
-  const meta = STATUS_META[status];
+// Removed by an admin overrides the seller's own status
+function StatusPill({ status, removed }: { status: ListingStatus; removed?: boolean }) {
+  const meta = removed ? { label: "Removed", tone: "red" } : STATUS_META[status];
   return (
     <span
       className={`inline-flex shrink-0 items-center text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${TONE_CLASSES[meta.tone]}`}
@@ -228,9 +230,16 @@ export default function MyListingsPage() {
                                 </div>
                               )}
                             </div>
-                            <p className="font-bold text-gray-900 text-xs truncate max-w-[220px]">
-                              {truncateText(listing.title, 45)}
-                            </p>
+                            <div className="min-w-0">
+                              <p className="font-bold text-gray-900 text-xs truncate max-w-[220px]">
+                                {truncateText(listing.title, 45)}
+                              </p>
+                              {listing.removed_at && (
+                                <p className="max-w-[220px] truncate text-[10px] font-semibold text-red-600" title={listing.removal_reason ?? undefined}>
+                                  Removed by Junction: {listing.removal_reason}
+                                </p>
+                              )}
+                            </div>
                           </div>
                         </td>
                         <td className="px-4 py-2">
@@ -244,17 +253,19 @@ export default function MyListingsPage() {
                           </span>
                         </td>
                         <td className="px-4 py-2">
-                          <StatusPill status={listing.status} />
+                          <StatusPill status={listing.status} removed={Boolean(listing.removed_at)} />
                         </td>
                         <td className="px-4 py-2">
                           <div className="flex items-center justify-end gap-1">
-                            <Link
-                              href={`/dashboard/listings/${listing.id}/edit`}
-                              className="p-1.5 text-gray-400 hover:text-[#2D6A4F] hover:bg-[#2D6A4F]/5 rounded-md transition-colors"
-                              title="Edit"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </Link>
+                            {!listing.removed_at && (
+                              <Link
+                                href={`/dashboard/listings/${listing.id}/edit`}
+                                className="p-1.5 text-gray-400 hover:text-[#2D6A4F] hover:bg-[#2D6A4F]/5 rounded-md transition-colors"
+                                title="Edit"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Link>
+                            )}
                             <button
                               onClick={() => handleDelete(listing.id)}
                               disabled={deletingId === listing.id}
@@ -302,7 +313,7 @@ export default function MyListingsPage() {
                       <p className="font-bold text-gray-900 text-xs truncate">
                         {truncateText(listing.title, 30)}
                       </p>
-                      <StatusPill status={listing.status} />
+                      <StatusPill status={listing.status} removed={Boolean(listing.removed_at)} />
                     </div>
                     <p className="text-[10px] text-gray-400 font-medium truncate">
                       {listing.category?.name ?? "Uncategorized"} ·{" "}
@@ -310,14 +321,21 @@ export default function MyListingsPage() {
                         {formatPrice(listing.price)}
                       </span>
                     </p>
+                    {listing.removed_at && (
+                      <p className="max-w-[220px] truncate text-[10px] font-semibold text-red-600" title={listing.removal_reason ?? undefined}>
+                        Removed by Junction: {listing.removal_reason}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-0.5 shrink-0">
-                    <Link
-                      href={`/dashboard/listings/${listing.id}/edit`}
-                      className="p-1.5 text-gray-400 hover:text-[#2D6A4F] rounded-md transition-colors"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </Link>
+                    {!listing.removed_at && (
+                      <Link
+                        href={`/dashboard/listings/${listing.id}/edit`}
+                        className="p-1.5 text-gray-400 hover:text-[#2D6A4F] rounded-md transition-colors"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Link>
+                    )}
                     <button
                       onClick={() => handleDelete(listing.id)}
                       disabled={deletingId === listing.id}

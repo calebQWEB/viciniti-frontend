@@ -13,6 +13,7 @@ const ATTENTION: { key: keyof AdminOverview["attention"]; label: string; href: s
   { key: "refunds", label: "Refunds owed", href: "/admin/orders?queue=refunds", hint: "Paid after the order closed" },
   { key: "disputes", label: "Open disputes", href: "/admin/orders?queue=disputes", hint: "Chargebacks in progress" },
   { key: "blocked_payouts", label: "Blocked payouts", href: "/admin/orders?queue=blocked_payouts", hint: "Seller has no bank account" },
+  { key: "held_payouts", label: "Held payouts", href: "/admin/orders?queue=held_payouts", hint: "Seller is suspended" },
   { key: "critical_logs", label: "Critical logs", href: "/admin/logs?level=critical", hint: "Unresolved" },
 ];
 

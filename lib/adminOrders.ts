@@ -14,6 +14,7 @@ export const ORDERS_PAGE_SIZE = 25;
 export const QUEUES: { name: OrderQueueName; label: string; empty: string }[] = [
   { name: "failing_payouts", label: "Failing payouts", empty: "No payouts are failing." },
   { name: "blocked_payouts", label: "Blocked payouts", empty: "No sellers are missing a bank account." },
+  { name: "held_payouts", label: "Held: seller suspended", empty: "No payouts are on hold." },
   { name: "refunds", label: "Refunds owed", empty: "No buyers are owed a refund." },
   { name: "disputes", label: "Open disputes", empty: "No open disputes." },
 ];

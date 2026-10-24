@@ -1,6 +1,6 @@
 import type { LogListItem, LogUser } from "@/types/app_log";
 
-export type OrderQueueName = "failing_payouts" | "blocked_payouts" | "refunds" | "disputes";
+export type OrderQueueName = "failing_payouts" | "blocked_payouts" | "held_payouts" | "refunds" | "disputes";
 
 export interface MoneyTotals {
   // Value of orders where the buyer's money was taken
@@ -111,4 +111,110 @@ export interface RetryAllResult {
   attempted: number;
   sent: number;
   results: PayoutAttemptResult[];
+}
+
+// ---------- Users ----------
+
+export type UserFilter = "all" | "suspended" | "admins" | "new";
+
+export interface AdminUserItem {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string | null;
+  location: string | null;
+  intent: string | null;
+  created_at: string | null;
+  is_admin: boolean;
+  is_suspended: boolean;
+  suspended_at: string | null;
+  listings_count: number;
+  services_count: number;
+  orders_count: number;
+}
+
+export interface PaginatedAdminUsers {
+  items: AdminUserItem[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+}
+
+export interface OrderSideTotals {
+  count: number;
+  // Value of orders where the money was taken
+  value: number;
+}
+
+// GET /admin/users/{id}
+export interface AdminUserDetail extends AdminUserItem {
+  onboarded_at: string | null;
+  // Shown to the user
+  suspension_reason: string | null;
+  // Admins only
+  suspension_note: string | null;
+  suspended_by: LogUser | null;
+  bank: { bank_name: string; account_name: string; account_last4: string } | null;
+  listings_by_status: Record<string, number>;
+  services_by_status: Record<string, number>;
+  as_buyer: OrderSideTotals;
+  as_seller: OrderSideTotals;
+  disputes: number;
+  rating_average: number | null;
+  rating_count: number;
+  recent_orders: AdminOrderItem[];
+  logs: LogListItem[];
+}
+
+// ---------- Listings & services ----------
+
+export type ListingKind = "item" | "service";
+
+export interface AdminListingItem {
+  id: string;
+  kind: ListingKind;
+  title: string;
+  price: number;
+  // The seller's own status: active/sold for items, active/inactive for services
+  status: string;
+  thumbnail: string | null;
+  location: string | null;
+  category: { id: string; name: string; slug: string } | null;
+  seller: LogUser;
+  seller_suspended: boolean;
+  created_at: string | null;
+  removed_at: string | null;
+  removal_reason: string | null;
+}
+
+export interface PaginatedAdminListings {
+  items: AdminListingItem[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+}
+
+// GET /admin/listings/{kind}/{id}
+export interface AdminListingDetail extends AdminListingItem {
+  description: string;
+  images: string[];
+  removed_by: LogUser | null;
+  // Orders for an item; bookings for a service
+  orders_count: number;
+}
+
+// ---------- Categories ----------
+
+export interface AdminCategory {
+  id: string;
+  name: string;
+  // Fixed once created, so links like /browse/items?category=<slug> keep working
+  slug: string;
+  type: ListingKind;
+  icon: string | null;
+  sort_order: number;
+  is_active: boolean;
+  usage_count: number;
 }

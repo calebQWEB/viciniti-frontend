@@ -7,7 +7,8 @@ import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, CircleAlert, ExternalLink } from "lucide-react";
 import { OrderStatusBadge } from "@/components/admin/AdminOrderRow";
-import LevelBadge from "@/components/admin/LevelBadge";
+import Card from "@/components/admin/AdminCard";
+import LogEntryList from "@/components/admin/LogEntryList";
 import RefundDialog from "@/components/admin/RefundDialog";
 import { useAdminOrderActions } from "@/hooks/useAdminOrderActions";
 import { formatLogTime, timeAgo } from "@/lib/adminLogs";
@@ -21,18 +22,6 @@ const TONE_DOT: Record<TimelineStep["tone"], string> = {
   upcoming: "bg-white border-gray-300",
   problem: "bg-red-500 border-red-500",
 };
-
-function Card({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
-  return (
-    <section className="rounded-2xl border border-earth-200 bg-white">
-      <div className="flex items-center justify-between border-b border-earth-100 px-4 py-3">
-        <h2 className="text-[13.5px] font-semibold text-gray-900">{title}</h2>
-        {action}
-      </div>
-      <div className="px-4 py-3">{children}</div>
-    </section>
-  );
-}
 
 function Person({ label, person, children }: { label: string; person: LogUser; children?: React.ReactNode }) {
   return (
@@ -203,27 +192,7 @@ function OrderBody({ order }: { order: AdminOrderDetail }) {
           </Card>
 
           <Card title="Log entries">
-            {order.logs.length === 0 ? (
-              <p className="text-[12.5px] text-gray-500">Nothing logged for this order.</p>
-            ) : (
-              <ul className="-mx-4">
-                {order.logs.map((log) => (
-                  <li key={log.id} className="border-t border-earth-100 first:border-t-0">
-                    <Link
-                      href={`/admin/logs?status=all&entry=${log.id}`}
-                      className="flex items-center gap-3 px-4 py-2 hover:bg-earth-50"
-                    >
-                      <LevelBadge level={log.level} />
-                      <span className="min-w-0 flex-1">
-                        <span className="block font-mono text-xs text-gray-900">{log.event}</span>
-                        <span className="block truncate text-[11.5px] text-gray-600">{log.message}</span>
-                      </span>
-                      <span className="whitespace-nowrap text-[11.5px] text-gray-500">{timeAgo(log.created_at)}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <LogEntryList logs={order.logs} empty="Nothing logged for this order." />
           </Card>
         </div>
 

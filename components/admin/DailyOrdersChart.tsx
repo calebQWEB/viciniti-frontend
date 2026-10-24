@@ -93,8 +93,9 @@ export default function DailyOrdersChart({ daily }: { daily: AdminOverview["dail
         </div>
       </div>
 
-      {/* The same numbers for screen readers */}
-      <table className="sr-only">
+      {/* The same numbers for screen readers. Hidden on a wrapper: browsers don't clip a table itself */}
+      <div className="sr-only">
+        <table>
         <caption>Order value per day, last 30 days</caption>
         <thead>
           <tr>
@@ -112,7 +113,8 @@ export default function DailyOrdersChart({ daily }: { daily: AdminOverview["dail
             </tr>
           ))}
         </tbody>
-      </table>
+        </table>
+      </div>
     </figure>
   );
 }

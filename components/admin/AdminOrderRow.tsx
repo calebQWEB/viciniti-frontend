@@ -42,6 +42,13 @@ function QueueReason({ order, queue }: { order: AdminOrderItem; queue?: OrderQue
       </p>
     );
   }
+  if (queue === "held_payouts") {
+    return (
+      <p className="text-xs text-gray-600">
+        {order.seller.name} is suspended; this pays out once they&apos;re reinstated
+      </p>
+    );
+  }
   if (queue === "refunds") {
     return (
       <p className="text-xs text-gray-600">
@@ -61,7 +68,7 @@ function QueueReason({ order, queue }: { order: AdminOrderItem; queue?: OrderQue
 }
 
 export default function AdminOrderRow({ order, queue, retryResult, isRetrying, onRetry, onRefund }: Props) {
-  const showsPayout = queue === "failing_payouts" || queue === "blocked_payouts";
+  const showsPayout = queue === "failing_payouts" || queue === "blocked_payouts" || queue === "held_payouts";
 
   return (
     <li className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-earth-100 px-4 py-3 last:border-b-0">

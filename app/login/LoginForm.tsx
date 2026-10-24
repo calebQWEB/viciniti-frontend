@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Lock, Mail } from "lucide-react";
 import { apiErrorDetail, login, postLoginPath } from "@/lib/auth";
 import { useAuthStore } from "@/store/authStore";
@@ -18,6 +18,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  // Sent here because the account was suspended mid-session; signing in again shows the reason
+  const notice =
+    useSearchParams().get("notice") === "suspended"
+      ? "This account has been suspended. Sign in to see why, or contact support if you think it's a mistake."
+      : "";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +49,7 @@ export default function LoginPage() {
       subtitle="Sign in to see what's happening near you."
       headline="Your neighbourhood's been busy."
     >
-      <FormError message={error} />
+      <FormError message={error || notice} />
 
       <form onSubmit={handleSubmit} className="space-y-3">
         <Field

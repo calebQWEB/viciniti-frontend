@@ -44,12 +44,14 @@ const STATUS_META: Record<
 const TONE_CLASSES: Record<string, string> = {
   green: "text-[#2D6A4F] bg-[#2D6A4F]/10 border-[#2D6A4F]/15",
   gray: "text-gray-500 bg-gray-100 border-gray-200",
+  red: "text-red-700 bg-red-50 border-red-200",
 };
 
 const FILTER_ORDER: (ServiceStatus | "all")[] = ["all", "active", "inactive"];
 
-function StatusPill({ status }: { status: ServiceStatus }) {
-  const meta = STATUS_META[status];
+// Removed by an admin overrides the seller's own status
+function StatusPill({ status, removed }: { status: ServiceStatus; removed?: boolean }) {
+  const meta = removed ? { label: "Removed", tone: "red" } : STATUS_META[status];
   return (
     <span
       className={`inline-flex shrink-0 items-center text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${TONE_CLASSES[meta.tone]}`}
@@ -228,9 +230,16 @@ export default function MyServicesPage() {
                                 </div>
                               )}
                             </div>
-                            <p className="font-bold text-gray-900 text-xs truncate max-w-[220px]">
-                              {truncateText(service.title, 45)}
-                            </p>
+                            <div className="min-w-0">
+                              <p className="font-bold text-gray-900 text-xs truncate max-w-[220px]">
+                                {truncateText(service.title, 45)}
+                              </p>
+                              {service.removed_at && (
+                                <p className="max-w-[220px] truncate text-[10px] font-semibold text-red-600" title={service.removal_reason ?? undefined}>
+                                  Removed by Junction: {service.removal_reason}
+                                </p>
+                              )}
+                            </div>
                           </div>
                         </td>
                         <td className="px-4 py-2">
@@ -244,17 +253,19 @@ export default function MyServicesPage() {
                           </span>
                         </td>
                         <td className="px-4 py-2">
-                          <StatusPill status={service.status} />
+                          <StatusPill status={service.status} removed={Boolean(service.removed_at)} />
                         </td>
                         <td className="px-4 py-2">
                           <div className="flex items-center justify-end gap-1">
-                            <Link
-                              href={`/dashboard/services/${service.id}/edit`}
-                              className="p-1.5 text-gray-400 hover:text-[#2D6A4F] hover:bg-[#2D6A4F]/5 rounded-md transition-colors"
-                              title="Edit"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </Link>
+                            {!service.removed_at && (
+                              <Link
+                                href={`/dashboard/services/${service.id}/edit`}
+                                className="p-1.5 text-gray-400 hover:text-[#2D6A4F] hover:bg-[#2D6A4F]/5 rounded-md transition-colors"
+                                title="Edit"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Link>
+                            )}
                             <button
                               onClick={() => handleDelete(service.id)}
                               disabled={deletingId === service.id}
@@ -302,7 +313,7 @@ export default function MyServicesPage() {
                       <p className="font-bold text-gray-900 text-xs truncate">
                         {truncateText(service.title, 30)}
                       </p>
-                      <StatusPill status={service.status} />
+                      <StatusPill status={service.status} removed={Boolean(service.removed_at)} />
                     </div>
                     <p className="text-[10px] text-gray-400 font-medium truncate">
                       {service.category?.name ?? "Uncategorized"} ·{" "}
@@ -310,14 +321,21 @@ export default function MyServicesPage() {
                         {formatPrice(service.price)}
                       </span>
                     </p>
+                    {service.removed_at && (
+                      <p className="max-w-[220px] truncate text-[10px] font-semibold text-red-600" title={service.removal_reason ?? undefined}>
+                        Removed by Junction: {service.removal_reason}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-0.5 shrink-0">
-                    <Link
-                      href={`/dashboard/services/${service.id}/edit`}
-                      className="p-1.5 text-gray-400 hover:text-[#2D6A4F] rounded-md transition-colors"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </Link>
+                    {!service.removed_at && (
+                      <Link
+                        href={`/dashboard/services/${service.id}/edit`}
+                        className="p-1.5 text-gray-400 hover:text-[#2D6A4F] rounded-md transition-colors"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Link>
+                    )}
                     <button
                       onClick={() => handleDelete(service.id)}
                       disabled={deletingId === service.id}
